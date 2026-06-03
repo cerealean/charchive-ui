@@ -1,23 +1,106 @@
-<div class="row flex-center flex">
-  <div class="col-6 form-widget" aria-live="polite">
-    <h1 class="header">Supabase + Angular</h1>
-    <p class="description">Sign in via magic link with your email below</p>
-    <form [formGroup]="signInForm" (ngSubmit)="onSubmit()" class="form-widget">
-      <div>
-        <label for="email">Email</label>
-        <input
-          id="email"
-          formControlName="email"
-          class="inputField"
-          type="email"
-          placeholder="Your email"
-        />
+<section class="hero min-h-screen bg-base-200 px-4 py-10 lg:px-8">
+  <div class="hero-content w-full max-w-6xl flex-col gap-8 lg:flex-row lg:items-stretch lg:gap-12">
+    <div
+      class="flex w-full max-w-xl flex-col justify-between rounded-4xl bg-neutral text-neutral-content shadow-2xl"
+    >
+      <div class="space-y-6 p-8 sm:p-10">
+        <div class="badge badge-outline badge-lg border-neutral-content/30 text-neutral-content">
+          Charchive Access
+        </div>
+        <div class="space-y-4">
+          <h1 class="text-4xl font-black tracking-tight sm:text-5xl">Welcome back</h1>
+          <p class="max-w-lg text-base leading-7 text-neutral-content/75 sm:text-lg">
+            Sign in with a secure magic link and pick up exactly where you left off.
+          </p>
+        </div>
       </div>
-      <div>
-        <button type="submit" class="button block" [disabled]="loading">
-          {{ loading ? 'Loading' : 'Send magic link' }}
-        </button>
+
+      <div class="grid gap-4 border-t border-neutral-content/10 p-8 text-sm sm:grid-cols-2 sm:p-10">
+        <div class="rounded-2xl bg-neutral-content/8 p-4">
+          <p class="font-semibold">Passwordless</p>
+          <p class="mt-1 text-neutral-content/70">
+            A one-time sign-in link lands directly in your inbox.
+          </p>
+        </div>
+        <div class="rounded-2xl bg-neutral-content/8 p-4">
+          <p class="font-semibold">Fast session recovery</p>
+          <p class="mt-1 text-neutral-content/70">
+            Open the email on any device and continue without setup friction.
+          </p>
+        </div>
       </div>
-    </form>
+    </div>
+
+    <div class="card w-full max-w-xl border border-base-300 bg-base-100 shadow-xl">
+      <div class="card-body gap-6 p-6 sm:p-8">
+        <div class="space-y-2">
+          <p class="text-sm font-semibold uppercase tracking-[0.2em] text-primary">Login</p>
+          <h2 class="text-3xl font-bold text-base-content">Send a magic link</h2>
+          <p class="text-sm leading-6 text-base-content/70">
+            Enter the email address tied to your account. We will send a secure sign-in link that
+            expires automatically.
+          </p>
+        </div>
+
+        <div aria-live="polite" class="space-y-3">
+          @if (successMessage) {
+            <div role="status" class="alert alert-success alert-soft">
+              <span>{{ successMessage }}</span>
+            </div>
+          }
+
+          @if (errorMessage) {
+            <div role="alert" class="alert alert-error alert-soft">
+              <span>{{ errorMessage }}</span>
+            </div>
+          }
+        </div>
+
+        <form [formGroup]="signInForm" (ngSubmit)="onSubmit()" class="space-y-5" novalidate>
+          <label class="form-control w-full">
+            <div class="label px-0 pb-2">
+              <span class="label-text text-sm font-medium text-base-content">Email address</span>
+            </div>
+            <input
+              id="email"
+              formControlName="email"
+              class="input input-bordered input-lg w-full"
+              type="email"
+              placeholder="you@company.com"
+              autocomplete="email"
+              [attr.aria-invalid]="showEmailError"
+              [attr.aria-describedby]="showEmailError ? 'email-error' : null"
+            />
+            @if (showEmailError) {
+              <div class="label px-0 pt-2">
+                <span id="email-error" class="label-text-alt text-error">
+                  @if (emailControl.hasError('required')) {
+                    Email is required.
+                  } @else {
+                    Enter a valid email address.
+                  }
+                </span>
+              </div>
+            }
+          </label>
+
+          <button type="submit" class="btn btn-primary btn-lg w-full" [disabled]="loading">
+            @if (loading) {
+              <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
+              Sending link...
+            } @else {
+              Send magic link
+            }
+          </button>
+        </form>
+
+        <div class="divider my-0 text-xs text-base-content/50">Secure, passwordless access</div>
+
+        <div class="rounded-2xl bg-base-200 p-4 text-sm leading-6 text-base-content/70">
+          The link opens a verified session for this email only. If you do not see the message
+          within a minute, check spam or request a fresh link.
+        </div>
+      </div>
+    </div>
   </div>
-</div>
+</section>

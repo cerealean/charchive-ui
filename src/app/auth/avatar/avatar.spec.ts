@@ -1,17 +1,24 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { Avatar } from './avatar';
+import { AvatarComponent } from './avatar';
+import { SupabaseService } from '../services/supabase';
 
-describe('Avatar', () => {
-  let component: Avatar;
-  let fixture: ComponentFixture<Avatar>;
+describe('AvatarComponent', () => {
+  let component: AvatarComponent;
+  let fixture: ComponentFixture<AvatarComponent>;
+
+  const supabaseServiceMock = {
+    downLoadImage: async () => ({ data: null, error: null }),
+    uploadAvatar: async () => ({ data: null, error: null }),
+  } as unknown as SupabaseService;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [Avatar],
+      imports: [AvatarComponent],
+      providers: [{ provide: SupabaseService, useValue: supabaseServiceMock }],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(Avatar);
+    fixture = TestBed.createComponent(AvatarComponent);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

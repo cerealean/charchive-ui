@@ -11,12 +11,17 @@ import { SupabaseService } from '../services/supabase';
 export class AvatarComponent {
   _avatarUrl: SafeResourceUrl | undefined;
   uploading = false;
+  errorMessage = '';
+  readonly fileInputId = `avatar-upload-${Math.random().toString(36).slice(2, 10)}`;
 
   @Input()
   set avatarUrl(url: string | null) {
     if (url) {
       this.downloadImage(url);
+      return;
     }
+
+    this._avatarUrl = undefined;
   }
 
   @Output() upload = new EventEmitter<string>();
@@ -39,23 +44,25 @@ export class AvatarComponent {
     }
   }
 
-  async uploadAvatar(event: any) {
+  async uploadAvatar(event: Event) {
+    this.errorMessage = '';
+
     try {
       this.uploading = true;
-      if (!event.target.files || event.target.files.length === 0) {
+      const target = event.target as HTMLInputElement | null;
+      const file = target?.files?.item(0);
+
+      if (!file) {
         throw new Error('You must select an image to upload.');
       }
 
-      const file = event.target.files[0];
       const fileExt = file.name.split('.').pop();
       const filePath = `${Math.random()}.${fileExt}`;
 
       await this.supabase.uploadAvatar(filePath, file);
       this.upload.emit(filePath);
     } catch (error) {
-      if (error instanceof Error) {
-        alert(error.message);
-      }
+      this.errorMessage = error instanceof Error ? error.message : 'Unable to upload your image.';
     } finally {
       this.uploading = false;
     }
