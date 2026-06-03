@@ -1,0 +1,21 @@
+@if (_avatarUrl) {
+  <div>
+    <img [src]="_avatarUrl" alt="Avatar" class="avatar image" style="height: 150px; width: 150px" />
+  </div>
+}
+@if (!_avatarUrl) {
+  <div class="avatar no-image" style="height: 150px; width: 150px"></div>
+}
+<div style="width: 150px">
+  <label class="button primary block" for="single">
+    {{ uploading ? 'Uploading ...' : 'Upload' }}
+  </label>
+  <input
+    style="visibility: hidden; position: absolute"
+    type="file"
+    id="single"
+    accept="image/*"
+    (change)="uploadAvatar($event)"
+    [disabled]="uploading"
+  />
+</div>
