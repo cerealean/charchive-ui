@@ -1,1 +1,24 @@
-<router-outlet />
+<header class="navbar border-b border-base-300 bg-base-100 px-4 sm:px-6">
+  <div class="flex-1">
+    <span class="text-lg font-semibold tracking-tight text-base-content">Charchive</span>
+  </div>
+  <div class="flex-none">
+    @if (isLoggedIn()) {
+      <button
+        type="button"
+        class="btn btn-primary btn-sm sm:btn-md"
+        (click)="navigateTo('/account')"
+      >
+        Account
+      </button>
+    } @else {
+      <button type="button" class="btn btn-primary btn-sm sm:btn-md" (click)="navigateTo('/login')">
+        Login
+      </button>
+    }
+  </div>
+</header>
+
+<main class="min-h-[calc(100vh-4rem)]">
+  <router-outlet />
+</main>
