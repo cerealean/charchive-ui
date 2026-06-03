@@ -3,13 +3,13 @@ import { ReactiveFormsModule, Validators, FormBuilder } from '@angular/forms';
 import { SupabaseService } from '../services/supabase';
 
 @Component({
-  selector: 'app-auth',
-  templateUrl: './auth.html',
-  styleUrls: ['./auth.css'],
+  selector: 'app-login',
+  templateUrl: './login.html',
+  styleUrls: ['./login.css'],
   imports: [ReactiveFormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AuthComponent {
+export class LoginComponent {
   private readonly supabase = inject(SupabaseService);
   private readonly formBuilder = inject(FormBuilder);
 

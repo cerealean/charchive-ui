@@ -1,12 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { AuthComponent } from './auth';
+import { LoginComponent } from './login';
 import { SupabaseService } from '../services/supabase';
 
-describe('AuthComponent', () => {
-  let component: AuthComponent;
-  let fixture: ComponentFixture<AuthComponent>;
+describe('LoginComponent', () => {
+  let component: LoginComponent;
+  let fixture: ComponentFixture<LoginComponent>;
   let signInCalls = 0;
   let supabaseService: Pick<SupabaseService, 'signIn'>;
 
@@ -26,11 +26,11 @@ describe('AuthComponent', () => {
     };
 
     await TestBed.configureTestingModule({
-      imports: [AuthComponent],
+      imports: [LoginComponent],
       providers: [{ provide: SupabaseService, useValue: supabaseService }],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(AuthComponent);
+    fixture = TestBed.createComponent(LoginComponent);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });
