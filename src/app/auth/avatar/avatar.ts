@@ -1,4 +1,12 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  EventEmitter,
+  Input,
+  Output,
+} from '@angular/core';
 import { SafeResourceUrl, DomSanitizer } from '@angular/platform-browser';
 import { SupabaseService } from '../services/supabase';
 
@@ -6,6 +14,7 @@ import { SupabaseService } from '../services/supabase';
   selector: 'app-avatar',
   templateUrl: './avatar.html',
   styleUrls: ['./avatar.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
 })
 export class AvatarComponent {
@@ -22,6 +31,7 @@ export class AvatarComponent {
     }
 
     this._avatarUrl = undefined;
+    this.detectChangesSafely();
   }
 
   @Output() upload = new EventEmitter<string>();
@@ -29,6 +39,8 @@ export class AvatarComponent {
   constructor(
     private readonly supabase: SupabaseService,
     private readonly dom: DomSanitizer,
+    private readonly cdr: ChangeDetectorRef,
+    private readonly destroyRef: DestroyRef,
   ) {}
 
   async downloadImage(path: string) {
@@ -36,6 +48,7 @@ export class AvatarComponent {
       const { data } = await this.supabase.downLoadImage(path);
       if (data instanceof Blob) {
         this._avatarUrl = this.dom.bypassSecurityTrustResourceUrl(URL.createObjectURL(data));
+        this.detectChangesSafely();
       }
     } catch (error) {
       if (error instanceof Error) {
@@ -65,6 +78,13 @@ export class AvatarComponent {
       this.errorMessage = error instanceof Error ? error.message : 'Unable to upload your image.';
     } finally {
       this.uploading = false;
+      this.detectChangesSafely();
+    }
+  }
+
+  private detectChangesSafely(): void {
+    if (!this.destroyRef.destroyed) {
+      this.cdr.detectChanges();
     }
   }
 }

@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  Input,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { User } from '@supabase/supabase-js';
 import { Profile, SupabaseService } from '../services/supabase';
@@ -8,12 +16,14 @@ import { AvatarComponent } from '../avatar/avatar';
   selector: 'app-account',
   templateUrl: './account.html',
   styleUrls: ['./account.css'],
-  imports: [ReactiveFormsModule, AvatarComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [ReactiveFormsModule, AvatarComponent],
 })
 export class AccountComponent implements OnInit {
   private readonly supabase = inject(SupabaseService);
   private readonly formBuilder = inject(FormBuilder);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly destroyRef = inject(DestroyRef);
 
   loading = false;
   statusMessage = '';
@@ -60,6 +70,7 @@ export class AccountComponent implements OnInit {
     await this.getProfile();
 
     if (!this.profile) {
+      this.detectChangesSafely();
       return;
     }
 
@@ -69,6 +80,8 @@ export class AccountComponent implements OnInit {
       website,
       avatar_url,
     });
+
+    this.detectChangesSafely();
   }
 
   async getProfile() {
@@ -93,6 +106,7 @@ export class AccountComponent implements OnInit {
       this.errorMessage = error instanceof Error ? error.message : 'Unable to load your profile.';
     } finally {
       this.loading = false;
+      this.detectChangesSafely();
     }
   }
 
@@ -112,9 +126,9 @@ export class AccountComponent implements OnInit {
         throw new Error('No active user is available for profile updates.');
       }
 
-      const username = this.updateProfileForm.controls.username.getRawValue().trim();
-      const website = this.updateProfileForm.controls.website.getRawValue().trim();
-      const avatar_url = this.updateProfileForm.controls.avatar_url.getRawValue().trim();
+      const username = this.updateProfileForm.controls.username.getRawValue()?.trim();
+      const website = this.updateProfileForm.controls.website.getRawValue()?.trim();
+      const avatar_url = this.updateProfileForm.controls.avatar_url.getRawValue()?.trim();
 
       const { error } = await this.supabase.updateProfile({
         id: this.user.id,
@@ -132,6 +146,7 @@ export class AccountComponent implements OnInit {
       this.errorMessage = error instanceof Error ? error.message : 'Unable to save your profile.';
     } finally {
       this.loading = false;
+      this.detectChangesSafely();
     }
   }
 
@@ -146,6 +161,13 @@ export class AccountComponent implements OnInit {
       this.errorMessage = error instanceof Error ? error.message : 'Unable to sign out.';
     } finally {
       this.loading = false;
+      this.detectChangesSafely();
+    }
+  }
+
+  private detectChangesSafely(): void {
+    if (!this.destroyRef.destroyed) {
+      this.cdr.detectChanges();
     }
   }
 }

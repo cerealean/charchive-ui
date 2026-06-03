@@ -7,7 +7,6 @@ import { SupabaseService } from '../services/supabase';
   templateUrl: './login.html',
   styleUrls: ['./login.css'],
   imports: [ReactiveFormsModule],
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoginComponent {
   private readonly supabase = inject(SupabaseService);
