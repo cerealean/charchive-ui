@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { User } from '@supabase/supabase-js';
 
 import { AccountComponent } from './account';
-import { SupabaseService } from '../services/supabase';
+import { SupabaseService } from '../../services/supabase';
 
 describe('AccountComponent', () => {
   let component: AccountComponent;

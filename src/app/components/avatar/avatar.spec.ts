@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { AvatarComponent } from './avatar';
-import { SupabaseService } from '../services/supabase';
+import { SupabaseService } from '../../services/supabase';
 
 describe('AvatarComponent', () => {
   let component: AvatarComponent;

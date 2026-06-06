@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ReactiveFormsModule, Validators, FormBuilder } from '@angular/forms';
-import { SupabaseService } from '../services/supabase';
+import { SupabaseService } from '../../services/supabase';
 
 @Component({
   selector: 'app-login',

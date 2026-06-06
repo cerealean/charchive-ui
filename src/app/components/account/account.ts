@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { User } from '@supabase/supabase-js';
-import { Profile, SupabaseService } from '../services/supabase';
+import { Profile, SupabaseService } from '../../services/supabase';
 import { AvatarComponent } from '../avatar/avatar';
 
 @Component({

@@ -8,7 +8,7 @@ import {
   Output,
 } from '@angular/core';
 import { SafeResourceUrl, DomSanitizer } from '@angular/platform-browser';
-import { SupabaseService } from '../services/supabase';
+import { SupabaseService } from '../../services/supabase';
 
 @Component({
   selector: 'app-avatar',

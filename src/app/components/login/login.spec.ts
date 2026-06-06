@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { LoginComponent } from './login';
-import { SupabaseService } from '../services/supabase';
+import { SupabaseService } from '../../services/supabase';
 
 describe('LoginComponent', () => {
   let component: LoginComponent;
