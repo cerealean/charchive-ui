@@ -1,7 +1,7 @@
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { User } from '@supabase/supabase-js';
-import { SupabaseService } from './auth/services/supabase';
+import { SupabaseService } from './services/supabase';
 
 @Component({
   selector: 'app-root',

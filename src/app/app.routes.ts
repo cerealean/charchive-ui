@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 
-import { mustBeLoggedIn } from './auth/guards/must-be-logged-in.guard';
+import { mustBeLoggedIn } from './guards/must-be-logged-in.guard';
 
 export const routes: Routes = [
   {
@@ -9,11 +9,11 @@ export const routes: Routes = [
   },
   {
     path: 'login',
-    loadComponent: () => import('./auth/login/login').then((m) => m.LoginComponent),
+    loadComponent: () => import('./login/login').then((m) => m.LoginComponent),
   },
   {
     path: 'account',
     canActivate: [mustBeLoggedIn],
-    loadComponent: () => import('./auth/account/account').then((m) => m.AccountComponent),
+    loadComponent: () => import('./account/account').then((m) => m.AccountComponent),
   },
 ];

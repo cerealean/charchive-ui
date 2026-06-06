@@ -6,7 +6,7 @@ import {
   SupabaseClient,
   User,
 } from '@supabase/supabase-js';
-import { environment } from '../../../environments/environment';
+import { environment } from '../../environments/environment';
 
 export interface Profile {
   id?: string;
