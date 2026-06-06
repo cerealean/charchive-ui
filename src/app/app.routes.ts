@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 
-import { authGuard } from './auth/guards/auth.guard';
+import { mustBeLoggedIn } from './auth/guards/must-be-logged-in.guard';
 
 export const routes: Routes = [
   {
@@ -13,7 +13,7 @@ export const routes: Routes = [
   },
   {
     path: 'account',
-    canActivate: [authGuard],
+    canActivate: [mustBeLoggedIn],
     loadComponent: () => import('./auth/account/account').then((m) => m.AccountComponent),
   },
 ];

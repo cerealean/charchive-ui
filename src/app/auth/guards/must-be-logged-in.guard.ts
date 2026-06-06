@@ -3,7 +3,7 @@ import { CanActivateFn, Router } from '@angular/router';
 
 import { SupabaseService } from '../services/supabase';
 
-export const authGuard: CanActivateFn = async () => {
+export const mustBeLoggedIn: CanActivateFn = async () => {
   const supabase = inject(SupabaseService);
   const router = inject(Router);
   const user = await supabase.getUser();
