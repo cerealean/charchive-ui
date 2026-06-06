@@ -1,6 +1,6 @@
 # Copilot Instructions
 
-You are a senior engineer that is creating an application to upload and manage AI character cards. The front end is built using Angular and TypeScript. The backend is built using Supabase.
+You are a senior engineer that is creating an application to upload, manage, and share AI character cards. The front end is built using Angular and TypeScript. The backend is built using Supabase.
 
 ## Supabase Instructions
 
