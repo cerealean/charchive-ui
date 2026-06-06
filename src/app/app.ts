@@ -34,7 +34,7 @@ export class App {
     this.user.set(user);
   }
 
-  protected navigateTo(path: '/login' | '/account'): void {
+  protected navigateTo(path: string): void {
     void this.router.navigateByUrl(path);
   }
 }

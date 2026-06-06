@@ -12,8 +12,13 @@ export const routes: Routes = [
     loadComponent: () => import('./components/login/login').then((m) => m.LoginComponent),
   },
   {
-    path: 'account',
+    path: 'my',
     canActivate: [mustBeLoggedIn],
-    loadComponent: () => import('./components/account/account').then((m) => m.AccountComponent),
+    children: [
+      {
+        path: 'account',
+        loadComponent: () => import('./components/account/account').then((m) => m.AccountComponent),
+      },
+    ],
   },
 ];
