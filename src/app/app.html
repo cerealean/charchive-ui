@@ -4,13 +4,22 @@
   </div>
   <div class="flex-none">
     @if (isLoggedIn()) {
-      <button
-        type="button"
-        class="btn btn-primary btn-sm sm:btn-md"
-        (click)="navigateTo('/my/account')"
-      >
-        Account
-      </button>
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          class="btn btn-outline btn-sm sm:btn-md"
+          (click)="navigateTo('/my/cards')"
+        >
+          My cards
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary btn-sm sm:btn-md"
+          (click)="navigateTo('/my/account')"
+        >
+          Account
+        </button>
+      </div>
     } @else {
       <button type="button" class="btn btn-primary btn-sm sm:btn-md" (click)="navigateTo('/login')">
         Login

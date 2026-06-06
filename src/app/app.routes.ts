@@ -16,9 +16,19 @@ export const routes: Routes = [
     canActivate: [mustBeLoggedIn],
     children: [
       {
+        path: 'cards',
+        loadComponent: () =>
+          import('./components/my-cards/my-cards').then((m) => m.MyCardsComponent),
+      },
+      {
         path: 'account',
         loadComponent: () => import('./components/account/account').then((m) => m.AccountComponent),
       },
     ],
+  },
+  {
+    path: 'cards/:id',
+    loadComponent: () =>
+      import('./components/card-detail/card-detail').then((m) => m.CardDetailComponent),
   },
 ];
