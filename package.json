@@ -7,6 +7,7 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "test:once": "ng test --watch=false",
     "serve:ssr:charchive-ui": "node dist/charchive-ui/server/server.mjs",
     "seed:cards:generate": "node ./supabase/seeds/generate-cards-seed.mjs",
     "seed:storage:local": "node ./supabase/seeds/seed-storage-local.mjs",
