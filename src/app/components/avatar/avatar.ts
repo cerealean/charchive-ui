@@ -50,7 +50,7 @@ export class AvatarComponent {
 
   async downloadImage(path: string) {
     try {
-      const { data } = await this.supabase.downLoadImage(path);
+      const { data } = await this.supabase.downloadImage(path);
       if (data instanceof Blob) {
         this.revokeAvatarObjectUrl();
         this.avatarObjectUrl = URL.createObjectURL(data);

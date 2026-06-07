@@ -8,7 +8,7 @@ describe('AvatarComponent', () => {
   let fixture: ComponentFixture<AvatarComponent>;
 
   const supabaseServiceMock = {
-    downLoadImage: async () => ({ data: null, error: null }),
+    downloadImage: async () => ({ data: null, error: null }),
     uploadAvatar: async () => ({ data: null, error: null }),
   } as unknown as SupabaseService;
 

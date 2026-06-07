@@ -31,7 +31,7 @@ describe('AccountComponent', () => {
       count: null,
     }),
     signOut: async () => ({ error: null }),
-    downLoadImage: async () => ({ data: null, error: null }),
+    downloadImage: async () => ({ data: null, error: null }),
     uploadAvatar: async () => ({ data: null, error: null }),
   } as unknown as SupabaseService;
 

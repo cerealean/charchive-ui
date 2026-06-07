@@ -215,7 +215,7 @@ export class SupabaseService {
     return typeof username === 'string' && username.trim().length > 0;
   }
 
-  downLoadImage(path: string) {
+  downloadImage(path: string) {
     return this.supabase.storage.from('profile-avatars').download(path);
   }
 
