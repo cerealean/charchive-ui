@@ -264,8 +264,41 @@ export class CardService {
       };
     } catch (error) {
       await this.rollbackCardUpload(cardId, uploadedStoragePath);
-      throw error;
+      throw this.normalizeUploadError(error);
     }
+  }
+
+  private normalizeUploadError(error: unknown): Error {
+    if (!(error instanceof Error)) {
+      return new Error('Unable to upload this file.');
+    }
+
+    const message = error.message.toLowerCase();
+
+    if (message.includes("there isn't card data in the image")) {
+      return error;
+    }
+
+    if (message.includes('problem trying to get the data from the image')) {
+      return error;
+    }
+
+    if (
+      message.includes('row-level security policy') &&
+      (message.includes('storage.objects') || message.includes('objects'))
+    ) {
+      return new Error(
+        'Upload is blocked by Storage permissions. Confirm you are signed in and try again.',
+      );
+    }
+
+    if (message.includes('row-level security policy')) {
+      return new Error(
+        'Upload is blocked by Row Level Security. Confirm you are signed in and try again.',
+      );
+    }
+
+    return error;
   }
 
   private normalizeCardFilePath(path: string): string {
