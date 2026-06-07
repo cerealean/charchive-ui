@@ -35,6 +35,12 @@
       </div>
     }
 
+    @if (uploadErrorMessage()) {
+      <div class="alert alert-error alert-soft" role="alert">
+        <span>{{ uploadErrorMessage() }}</span>
+      </div>
+    }
+
     @if (loading()) {
       <div class="alert alert-info alert-soft" role="status">
         <span>Loading your cards...</span>

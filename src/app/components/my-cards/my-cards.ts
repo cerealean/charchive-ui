@@ -20,6 +20,7 @@ export class MyCardsComponent implements OnInit {
   protected readonly loading = signal(false);
   protected readonly uploading = signal(false);
   protected readonly errorMessage = signal('');
+  protected readonly uploadErrorMessage = signal('');
 
   protected readonly uploadStatus = signal<string>('');
 
@@ -42,6 +43,7 @@ export class MyCardsComponent implements OnInit {
 
     this.uploading.set(true);
     this.errorMessage.set('');
+    this.uploadErrorMessage.set('');
     this.uploadStatus.set(`Uploading ${file.name}...`);
 
     try {
@@ -58,7 +60,7 @@ export class MyCardsComponent implements OnInit {
       await this.loadMyCards();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to upload this file.';
-      this.errorMessage.set(message);
+      this.uploadErrorMessage.set(message);
       this.uploadStatus.set('');
     } finally {
       this.uploading.set(false);
