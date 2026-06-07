@@ -48,4 +48,3 @@ Thumbs.db
 /supabase/card-files/**
 !/supabase/card-files/.gitkeep
 /supabase/images/**
-!/supabase/images/.gitkeep
