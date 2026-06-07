@@ -122,7 +122,7 @@ file_size_limit = "50MiB"
 public = false
 file_size_limit = "50MiB"
 allowed_mime_types = ["application/json", "image/*"]
-objects_path = "./card-files/cards"
+objects_path = "./card-files"
 
 [storage.buckets."profile-avatars"]
 public = false

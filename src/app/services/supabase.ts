@@ -191,7 +191,44 @@ export class SupabaseService {
     return this.supabase.storage.from('profile-avatars').upload(filePath, file);
   }
 
-  createCardFileSignedUrl(path: string, expiresInSeconds = 3600) {
-    return this.supabase.storage.from('card-files').createSignedUrl(path, expiresInSeconds);
+  async createCardFileSignedUrl(path: string, expiresInSeconds = 3600) {
+    const storage = this.supabase.storage.from('card-files');
+    const candidates = this.buildCardFilePathCandidates(path);
+    type SignedUrlResult = Awaited<ReturnType<typeof storage.createSignedUrl>>;
+    let lastResult: SignedUrlResult | null = null;
+
+    for (const candidate of candidates) {
+      const result = await storage.createSignedUrl(candidate, expiresInSeconds);
+
+      if (!result.error && result.data?.signedUrl) {
+        return result;
+      }
+
+      lastResult = result;
+    }
+
+    return (
+      lastResult ?? storage.createSignedUrl(this.normalizeCardFilePath(path), expiresInSeconds)
+    );
+  }
+
+  private normalizeCardFilePath(path: string): string {
+    const trimmed = path.trim().replace(/^\/+/, '');
+
+    if (trimmed.startsWith('card-files/')) {
+      return trimmed.slice('card-files/'.length);
+    }
+
+    return trimmed;
+  }
+
+  private buildCardFilePathCandidates(path: string): string[] {
+    const normalized = this.normalizeCardFilePath(path);
+    const withoutCardsPrefix = normalized.startsWith('cards/')
+      ? normalized.slice('cards/'.length)
+      : normalized;
+    const withCardsPrefix = normalized.startsWith('cards/') ? normalized : `cards/${normalized}`;
+
+    return Array.from(new Set([normalized, withoutCardsPrefix, withCardsPrefix]));
   }
 }
