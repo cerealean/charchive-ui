@@ -63,10 +63,10 @@ export class SupabaseService {
   }
 
   downLoadImage(path: string) {
-    return this.supabase.storage.from('avatars').download(path);
+    return this.supabase.storage.from('profile-avatars').download(path);
   }
 
   uploadAvatar(filePath: string, file: File) {
-    return this.supabase.storage.from('avatars').upload(filePath, file);
+    return this.supabase.storage.from('profile-avatars').upload(filePath, file);
   }
 }
