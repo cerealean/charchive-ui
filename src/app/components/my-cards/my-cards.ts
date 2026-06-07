@@ -1,14 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-
-type CardVisibility = 'private' | 'unlisted' | 'public';
-
-interface CardListItem {
-  id: string;
-  title: string;
-  visibility: CardVisibility;
-  updatedAt: string;
-}
+import { CardListItem } from '../../interfaces/card-list-item.interface';
 
 @Component({
   selector: 'app-my-cards',

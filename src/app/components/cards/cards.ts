@@ -8,21 +8,9 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { CardListRecord, SupabaseService } from '../../services/supabase';
-
-interface CardListViewModel {
-  id: string;
-  name: string;
-  tagline: string;
-  uploader: string;
-  createdAtIso: string;
-  createdAgo: string;
-  imageUrl: string | null;
-  tags: Array<{
-    slug: string;
-    name: string;
-  }>;
-}
+import { CardListRecord } from '../../interfaces/card-list-record.interface';
+import { CardListViewModel } from '../../interfaces/card-list-view-model.interface';
+import { SupabaseService } from '../../services/supabase';
 
 @Component({
   selector: 'app-cards',

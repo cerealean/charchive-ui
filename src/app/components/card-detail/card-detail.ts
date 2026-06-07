@@ -10,7 +10,8 @@ import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { CardDetailRecord, SupabaseService } from '../../services/supabase';
+import { CardDetailRecord } from '../../interfaces/card-detail-record.interface';
+import { SupabaseService } from '../../services/supabase';
 
 @Component({
   selector: 'app-card-detail',

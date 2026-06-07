@@ -13,7 +13,8 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { User } from '@supabase/supabase-js';
 import { merge, startWith } from 'rxjs';
 
-import { Profile, SupabaseService } from '../../services/supabase';
+import { Profile } from '../../interfaces/profile.interface';
+import { SupabaseService } from '../../services/supabase';
 import {
   createUsernameAvailabilityValidator,
   getUsernameStatus,

@@ -7,55 +7,9 @@ import {
   User,
 } from '@supabase/supabase-js';
 import { environment } from '../../environments/environment';
-
-export interface Profile {
-  id?: string;
-  username: string | null;
-  website: string | null;
-  avatar_url: string | null;
-}
-
-export interface CardDetailRecord {
-  id: string;
-  owner_id: string;
-  title: string;
-  created_at: string;
-  current_version: {
-    character_name: string;
-    creator_name: string | null;
-    creator_notes: string | null;
-    source_format: string;
-  } | null;
-  avatar_file: {
-    storage_path: string;
-  } | null;
-  tags: Array<{
-    tag: {
-      name: string;
-      slug: string;
-    } | null;
-  }>;
-}
-
-export interface CardListRecord {
-  id: string;
-  owner_id: string;
-  title: string;
-  tagline: string | null;
-  created_at: string;
-  current_version: {
-    character_name: string;
-  } | null;
-  avatar_file: {
-    storage_path: string;
-  } | null;
-  tags: Array<{
-    tag: {
-      name: string;
-      slug: string;
-    } | null;
-  }>;
-}
+import { CardDetailRecord } from '../interfaces/card-detail-record.interface';
+import { CardListRecord } from '../interfaces/card-list-record.interface';
+import { Profile } from '../interfaces/profile.interface';
 
 @Injectable({
   providedIn: 'root',
