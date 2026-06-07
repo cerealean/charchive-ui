@@ -1,4 +1,5 @@
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   OnInit,
@@ -25,7 +26,7 @@ const MAX_VISIBLE_PAGE_BUTTONS = 7;
   styleUrl: './cards.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CardsComponent implements OnInit {
+export class CardsComponent implements OnInit, AfterViewInit {
   private readonly supabase = inject(SupabaseService);
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
@@ -77,12 +78,22 @@ export class CardsComponent implements OnInit {
     await this.loadCards();
   }
 
+  ngAfterViewInit(): void {
+    void this.syncPageSizePreferenceFromBrowser();
+  }
+
   protected openCard(cardId: string): void {
     void this.router.navigate(['/cards', cardId]);
   }
 
-  protected async onPageSizeChanged(pageSize: string): Promise<void> {
-    const parsedPageSize = Number.parseInt(pageSize, 10);
+  protected async onPageSizeChanged(event: Event): Promise<void> {
+    const selectElement = event.target;
+
+    if (!(selectElement instanceof HTMLSelectElement)) {
+      return;
+    }
+
+    const parsedPageSize = Number.parseInt(selectElement.value, 10);
 
     if (!PAGE_SIZE_OPTIONS.includes(parsedPageSize as (typeof PAGE_SIZE_OPTIONS)[number])) {
       return;
@@ -202,20 +213,47 @@ export class CardsComponent implements OnInit {
   }
 
   private initializePageSizePreference(): void {
+    const savedPageSize = this.readSavedPageSizePreference();
+
+    if (savedPageSize !== null) {
+      this.pageSize.set(savedPageSize);
+    }
+  }
+
+  private async syncPageSizePreferenceFromBrowser(): Promise<void> {
+    const savedPageSize = this.readSavedPageSizePreference();
+
+    if (savedPageSize === null || savedPageSize === this.pageSize()) {
+      return;
+    }
+
+    this.pageSize.set(savedPageSize);
+    this.currentPage.set(1);
+    await this.loadCards();
+  }
+
+  private readSavedPageSizePreference(): number | null {
     if (!isPlatformBrowser(this.platformId)) {
-      return;
+      return null;
     }
 
-    const savedPageSize = globalThis.localStorage.getItem(PAGE_SIZE_STORAGE_KEY);
+    try {
+      const savedPageSize = globalThis.localStorage.getItem(PAGE_SIZE_STORAGE_KEY);
 
-    if (savedPageSize === null) {
-      return;
-    }
+      if (savedPageSize === null) {
+        return null;
+      }
 
-    const parsedPageSize = Number.parseInt(savedPageSize, 10);
+      const parsedPageSize = Number.parseInt(savedPageSize, 10);
 
-    if (PAGE_SIZE_OPTIONS.includes(parsedPageSize as (typeof PAGE_SIZE_OPTIONS)[number])) {
-      this.pageSize.set(parsedPageSize);
+      if (PAGE_SIZE_OPTIONS.includes(parsedPageSize as (typeof PAGE_SIZE_OPTIONS)[number])) {
+        return parsedPageSize;
+      }
+
+      return null;
+    } catch {
+      // Ignore storage errors and keep default page size.
+      return null;
     }
   }
 
@@ -224,7 +262,11 @@ export class CardsComponent implements OnInit {
       return;
     }
 
-    globalThis.localStorage.setItem(PAGE_SIZE_STORAGE_KEY, String(pageSize));
+    try {
+      globalThis.localStorage.setItem(PAGE_SIZE_STORAGE_KEY, String(pageSize));
+    } catch {
+      // Ignore storage errors; pagination still works for this session.
+    }
   }
 
   private async resolveCardImageUrls(

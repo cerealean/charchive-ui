@@ -42,15 +42,13 @@
             >
           </div>
           <select
-            #pageSizeSelect
             class="select select-bordered select-sm"
-            [value]="pageSize()"
             [disabled]="loading()"
-            (change)="onPageSizeChanged(pageSizeSelect.value)"
+            (change)="onPageSizeChanged($event)"
             aria-label="Cards displayed per page"
           >
             @for (size of pageSizeOptions; track size) {
-              <option [value]="size">{{ size }}</option>
+              <option [value]="size" [selected]="size === pageSize()">{{ size }}</option>
             }
           </select>
         </label>
