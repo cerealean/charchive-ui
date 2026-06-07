@@ -58,17 +58,31 @@
 
             <label class="form-control w-full">
               <div class="label px-0 pb-2">
-                <span class="label-text font-medium text-base-content">Display name</span>
+                <span class="label-text font-medium text-base-content">Username</span>
               </div>
               <input
                 id="username"
                 formControlName="username"
                 class="input input-bordered w-full"
                 type="text"
-                placeholder="How should people see your name?"
+                placeholder="Choose a public username"
                 autocomplete="name"
                 maxlength="64"
+                [attr.aria-invalid]="usernameControl.invalid && usernameControl.touched"
               />
+              @if (usernameControl.invalid && usernameControl.touched) {
+                <div class="label px-0 pt-2">
+                  <span class="label-text-alt text-error">
+                    @if (usernameControl.hasError('required')) {
+                      Username is required.
+                    } @else if (usernameControl.hasError('minlength')) {
+                      Username must be at least 3 characters.
+                    } @else {
+                      Username must be 64 characters or fewer.
+                    }
+                  </span>
+                </div>
+              }
             </label>
 
             <label class="form-control w-full">

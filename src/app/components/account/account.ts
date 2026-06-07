@@ -30,7 +30,7 @@ export class AccountComponent implements OnInit {
   errorMessage = '';
   profile?: Profile;
   readonly updateProfileForm = this.formBuilder.nonNullable.group({
-    username: ['', [Validators.maxLength(64)]],
+    username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(64)]],
     website: ['', [Validators.pattern(/^$|^https?:\/\/\S+$/i)]],
     avatar_url: [''],
   });
@@ -44,6 +44,10 @@ export class AccountComponent implements OnInit {
 
   get websiteControl() {
     return this.updateProfileForm.controls.website;
+  }
+
+  get usernameControl() {
+    return this.updateProfileForm.controls.username;
   }
 
   async updateAvatar(event: string): Promise<void> {
@@ -76,9 +80,9 @@ export class AccountComponent implements OnInit {
 
     const { username, website, avatar_url } = this.profile;
     this.updateProfileForm.patchValue({
-      username,
-      website,
-      avatar_url,
+      username: username ?? '',
+      website: website ?? '',
+      avatar_url: avatar_url ?? '',
     });
 
     this.detectChangesSafely();
@@ -126,7 +130,7 @@ export class AccountComponent implements OnInit {
         throw new Error('No active user is available for profile updates.');
       }
 
-      const username = this.updateProfileForm.controls.username.getRawValue()?.trim();
+      const username = this.updateProfileForm.controls.username.getRawValue().trim();
       const website = this.updateProfileForm.controls.website.getRawValue()?.trim();
       const avatar_url = this.updateProfileForm.controls.avatar_url.getRawValue()?.trim();
 

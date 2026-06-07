@@ -21,7 +21,10 @@ export class App {
     void this.loadCurrentUser();
 
     const { data: authListener } = this.supabase.authChanges((_event, session) => {
-      this.user.set(session?.user ?? null);
+      const user = session?.user ?? null;
+
+      this.user.set(user);
+      void this.syncUsernameRoute(user);
     });
 
     this.destroyRef.onDestroy(() => {
@@ -31,10 +34,29 @@ export class App {
 
   private async loadCurrentUser(): Promise<void> {
     const user = await this.supabase.getUser();
+
     this.user.set(user);
+    await this.syncUsernameRoute(user);
   }
 
   protected navigateTo(path: string): void {
     void this.router.navigateByUrl(path);
+  }
+
+  private async syncUsernameRoute(user: User | null): Promise<void> {
+    if (!user) {
+      return;
+    }
+
+    const hasUsername = await this.supabase.userHasUsername(user);
+    const isUsernameSetupRoute = this.router.url === '/my/username';
+
+    if (!hasUsername && !isUsernameSetupRoute) {
+      await this.router.navigateByUrl('/my/username', { replaceUrl: true });
+    }
+
+    if (hasUsername && isUsernameSetupRoute) {
+      await this.router.navigateByUrl('/my/cards', { replaceUrl: true });
+    }
   }
 }

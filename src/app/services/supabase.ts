@@ -10,9 +10,9 @@ import { environment } from '../../environments/environment';
 
 export interface Profile {
   id?: string;
-  username: string;
-  website: string;
-  avatar_url: string;
+  username: string | null;
+  website: string | null;
+  avatar_url: string | null;
 }
 
 @Injectable({
@@ -41,6 +41,10 @@ export class SupabaseService {
       .single();
   }
 
+  profileUsername(user: User) {
+    return this.supabase.from('profiles').select('username').eq('id', user.id).maybeSingle();
+  }
+
   authChanges(callback: (event: AuthChangeEvent, session: Session | null) => void) {
     return this.supabase.auth.onAuthStateChange(callback);
   }
@@ -60,6 +64,45 @@ export class SupabaseService {
     };
 
     return this.supabase.from('profiles').upsert(update);
+  }
+
+  updateUsername(userId: string, username: string) {
+    return this.supabase
+      .from('profiles')
+      .update({ username, updated_at: new Date().toISOString() })
+      .eq('id', userId);
+  }
+
+  async userHasUsername(user: User): Promise<boolean> {
+    const { data, error } = await this.profileUsername(user);
+
+    if (error) {
+      throw error;
+    }
+
+    return this.isUsernameComplete(data?.username);
+  }
+
+  async isUsernameAvailable(username: string, currentUserId?: string): Promise<boolean> {
+    const normalizedUsername = username.trim();
+
+    let query = this.supabase.from('profiles').select('id').eq('username', normalizedUsername);
+
+    if (currentUserId) {
+      query = query.neq('id', currentUserId);
+    }
+
+    const { data, error } = await query.maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return data === null;
+  }
+
+  isUsernameComplete(username: string | null | undefined): boolean {
+    return typeof username === 'string' && username.trim().length > 0;
   }
 
   downLoadImage(path: string) {
