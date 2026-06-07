@@ -14,7 +14,8 @@ import { Router } from '@angular/router';
 import { CardListCardComponent } from './card-list-card/card-list-card';
 import { CardListRecord } from '../../interfaces/card-list-record.interface';
 import { CardListViewModel } from '../../interfaces/card-list-view-model.interface';
-import { SupabaseService } from '../../services/supabase';
+import { CardService } from '../../services/card';
+import { ProfileService } from '../../services/profile';
 
 const PAGE_SIZE_STORAGE_KEY = 'cards.pageSize';
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 50] as const;
@@ -29,7 +30,8 @@ const MAX_VISIBLE_PAGE_BUTTONS = 7;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CardsComponent implements OnInit, AfterViewInit {
-  private readonly supabase = inject(SupabaseService);
+  private readonly cardsService = inject(CardService);
+  private readonly profiles = inject(ProfileService);
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly relativeTimeFormatter = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
@@ -147,7 +149,7 @@ export class CardsComponent implements OnInit, AfterViewInit {
         data: cards,
         error: cardsError,
         count,
-      } = await this.supabase.publicCardsPage(this.currentPage(), this.pageSize());
+      } = await this.cardsService.publicCardsPage(this.currentPage(), this.pageSize());
 
       if (cardsError) {
         throw cardsError;
@@ -172,7 +174,7 @@ export class CardsComponent implements OnInit, AfterViewInit {
       }
 
       const ownerIds = Array.from(new Set(cardRows.map((card) => card.owner_id)));
-      const { data: profiles, error: profilesError } = await this.supabase.profilesByIds(ownerIds);
+      const { data: profiles, error: profilesError } = await this.profiles.profilesByIds(ownerIds);
 
       if (profilesError) {
         throw profilesError;
@@ -282,7 +284,7 @@ export class CardsComponent implements OnInit, AfterViewInit {
           return [card.id, null] as const;
         }
 
-        const { data, error } = await this.supabase.createCardFileSignedUrl(storagePath, 3600);
+        const { data, error } = await this.cardsService.createCardFileSignedUrl(storagePath, 3600);
 
         if (error) {
           return [card.id, null] as const;

@@ -4,7 +4,8 @@ import { provideRouter, UrlTree } from '@angular/router';
 import { User } from '@supabase/supabase-js';
 import { Mock, vi } from 'vitest';
 
-import { SupabaseService } from '../services/supabase';
+import { AuthService } from '../services/auth';
+import { ProfileService } from '../services/profile';
 import { enforceUsernameCompletion } from './username-completion.guard';
 
 describe('enforceUsernameCompletion', () => {
@@ -20,9 +21,14 @@ describe('enforceUsernameCompletion', () => {
       providers: [
         provideRouter([]),
         {
-          provide: SupabaseService,
+          provide: AuthService,
           useValue: {
             getUser,
+          },
+        },
+        {
+          provide: ProfileService,
+          useValue: {
             userHasUsername,
           },
         },

@@ -2,17 +2,17 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { LoginComponent } from './login';
-import { SupabaseService } from '../../services/supabase';
+import { AuthService } from '../../services/auth';
 
 describe('LoginComponent', () => {
   let component: LoginComponent;
   let fixture: ComponentFixture<LoginComponent>;
   let signInCalls = 0;
-  let supabaseService: Pick<SupabaseService, 'signIn'>;
+  let authService: Pick<AuthService, 'signIn'>;
 
   beforeEach(async () => {
     signInCalls = 0;
-    supabaseService = {
+    authService = {
       signIn: async () => {
         signInCalls += 1;
         return {
@@ -27,7 +27,7 @@ describe('LoginComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [LoginComponent],
-      providers: [{ provide: SupabaseService, useValue: supabaseService }],
+      providers: [{ provide: AuthService, useValue: authService }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(LoginComponent);

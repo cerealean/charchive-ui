@@ -1,21 +1,23 @@
 import { inject } from '@angular/core';
 import { CanActivateChildFn, Router } from '@angular/router';
 
-import { SupabaseService } from '../services/supabase';
+import { AuthService } from '../services/auth';
+import { ProfileService } from '../services/profile';
 
 const USERNAME_SETUP_PATH = '/my/username';
 const AUTHENTICATED_HOME_PATH = '/my/cards';
 
 export const enforceUsernameCompletion: CanActivateChildFn = async (_route, state) => {
-  const supabase = inject(SupabaseService);
+  const auth = inject(AuthService);
+  const profiles = inject(ProfileService);
   const router = inject(Router);
-  const user = await supabase.getUser();
+  const user = await auth.getUser();
 
   if (!user) {
     return true;
   }
 
-  const hasUsername = await supabase.userHasUsername(user);
+  const hasUsername = await profiles.userHasUsername(user);
   const isUsernameSetupRoute = state.url === USERNAME_SETUP_PATH;
 
   if (!hasUsername && !isUsernameSetupRoute) {

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ReactiveFormsModule, Validators, FormBuilder } from '@angular/forms';
-import { SupabaseService } from '../../services/supabase';
+import { AuthService } from '../../services/auth';
 
 @Component({
   selector: 'app-login',
@@ -9,7 +9,7 @@ import { SupabaseService } from '../../services/supabase';
   imports: [ReactiveFormsModule],
 })
 export class LoginComponent {
-  private readonly supabase = inject(SupabaseService);
+  private readonly auth = inject(AuthService);
   private readonly formBuilder = inject(FormBuilder);
 
   loading = false;
@@ -41,7 +41,7 @@ export class LoginComponent {
     try {
       this.loading = true;
       const email = this.emailControl.getRawValue().trim();
-      const { error } = await this.supabase.signIn(email);
+      const { error } = await this.auth.signIn(email);
       if (error) {
         throw error;
       }

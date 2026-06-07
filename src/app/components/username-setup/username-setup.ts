@@ -10,7 +10,8 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { User } from '@supabase/supabase-js';
 
-import { SupabaseService } from '../../services/supabase';
+import { AuthService } from '../../services/auth';
+import { ProfileService } from '../../services/profile';
 import {
   createUsernameAvailabilityValidator,
   getUsernameStatus,
@@ -25,7 +26,8 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UsernameSetupComponent implements OnInit {
-  private readonly supabase = inject(SupabaseService);
+  private readonly auth = inject(AuthService);
+  private readonly profiles = inject(ProfileService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
@@ -38,7 +40,7 @@ export class UsernameSetupComponent implements OnInit {
   readonly usernameForm = this.formBuilder.nonNullable.group({
     username: this.formBuilder.nonNullable.control('', {
       validators: usernameSyncValidators,
-      asyncValidators: [createUsernameAvailabilityValidator(this.supabase, () => this.user)],
+      asyncValidators: [createUsernameAvailabilityValidator(this.profiles, () => this.user)],
     }),
   });
 
@@ -55,14 +57,14 @@ export class UsernameSetupComponent implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    this.user = await this.supabase.getUser();
+    this.user = await this.auth.getUser();
 
     if (!this.user) {
       await this.router.navigateByUrl('/login', { replaceUrl: true });
       return;
     }
 
-    if (await this.supabase.userHasUsername(this.user)) {
+    if (await this.profiles.userHasUsername(this.user)) {
       await this.router.navigateByUrl('/my/cards', { replaceUrl: true });
       return;
     }
@@ -92,7 +94,7 @@ export class UsernameSetupComponent implements OnInit {
       this.loading.set(true);
 
       const username = this.usernameControl.getRawValue().trim();
-      const { error } = await this.supabase.updateUsername(this.user.id, username);
+      const { error } = await this.profiles.updateUsername(this.user.id, username);
 
       if (error) {
         throw error;

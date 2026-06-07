@@ -2,7 +2,7 @@ import { AbstractControl, AsyncValidatorFn, ValidationErrors, Validators } from 
 import { User } from '@supabase/supabase-js';
 import { catchError, from, map, of, switchMap, timer } from 'rxjs';
 
-import { SupabaseService } from '../services/supabase';
+import { ProfileService } from '../services/profile';
 
 export type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken';
 
@@ -13,7 +13,7 @@ export const usernameSyncValidators = [
 ];
 
 export function createUsernameAvailabilityValidator(
-  supabase: SupabaseService,
+  profiles: ProfileService,
   getUser: () => User | null,
 ): AsyncValidatorFn {
   return (control: AbstractControl<string>) => {
@@ -25,7 +25,7 @@ export function createUsernameAvailabilityValidator(
     }
 
     return timer(250).pipe(
-      switchMap(() => from(supabase.isUsernameAvailable(username, user.id))),
+      switchMap(() => from(profiles.isUsernameAvailable(username, user.id))),
       map((isAvailable): ValidationErrors | null => (isAvailable ? null : { usernameTaken: true })),
       catchError(() => of({ usernameLookupFailed: true })),
     );

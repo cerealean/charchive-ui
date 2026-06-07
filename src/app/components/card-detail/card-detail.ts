@@ -11,7 +11,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { CardDetailRecord } from '../../interfaces/card-detail-record.interface';
-import { SupabaseService } from '../../services/supabase';
+import { CardService } from '../../services/card';
+import { ProfileService } from '../../services/profile';
 
 @Component({
   selector: 'app-card-detail',
@@ -24,7 +25,8 @@ export class CardDetailComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly supabase = inject(SupabaseService);
+  private readonly cardsService = inject(CardService);
+  private readonly profiles = inject(ProfileService);
 
   protected readonly card = signal<CardDetailRecord | null>(null);
   protected readonly uploadedBy = signal<string | null>(null);
@@ -93,7 +95,7 @@ export class CardDetailComponent {
     try {
       this.loading.set(true);
 
-      const { data: card, error: cardError } = await this.supabase.cardById(cardId);
+      const { data: card, error: cardError } = await this.cardsService.cardById(cardId);
 
       if (cardError) {
         throw cardError;
@@ -113,7 +115,7 @@ export class CardDetailComponent {
 
       const imageUrlPromise = this.resolveCardImageUrl(card.avatar_file?.storage_path);
 
-      const { data: uploaderProfile, error: uploaderError } = await this.supabase.profileById(
+      const { data: uploaderProfile, error: uploaderError } = await this.profiles.profileById(
         card.owner_id,
       );
 
@@ -148,7 +150,7 @@ export class CardDetailComponent {
       return null;
     }
 
-    const { data, error } = await this.supabase.createCardFileSignedUrl(storagePath, 3600);
+    const { data, error } = await this.cardsService.createCardFileSignedUrl(storagePath, 3600);
 
     if (error) {
       return null;

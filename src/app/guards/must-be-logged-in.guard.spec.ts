@@ -4,7 +4,7 @@ import { provideRouter, UrlTree } from '@angular/router';
 import { User } from '@supabase/supabase-js';
 import { Mock, vi } from 'vitest';
 
-import { SupabaseService } from '../services/supabase';
+import { AuthService } from '../services/auth';
 import { mustBeLoggedIn } from './must-be-logged-in.guard';
 
 describe('mustBeLoggedIn', () => {
@@ -18,7 +18,7 @@ describe('mustBeLoggedIn', () => {
       providers: [
         provideRouter([]),
         {
-          provide: SupabaseService,
+          provide: AuthService,
           useValue: {
             getUser,
           },

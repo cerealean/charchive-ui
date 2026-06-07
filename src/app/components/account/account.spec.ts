@@ -3,14 +3,19 @@ import { User } from '@supabase/supabase-js';
 import { vi } from 'vitest';
 
 import { AccountComponent } from './account';
-import { SupabaseService } from '../../services/supabase';
+import { AuthService } from '../../services/auth';
+import { ProfileService } from '../../services/profile';
 
 describe('AccountComponent', () => {
   let component: AccountComponent;
   let fixture: ComponentFixture<AccountComponent>;
 
-  const supabaseServiceMock = {
+  const authServiceMock = {
     getUser: async () => null,
+    signOut: async () => ({ error: null }),
+  } as unknown as AuthService;
+
+  const profileServiceMock = {
     isUsernameAvailable: vi.fn(async () => true),
     profile: async () => ({
       data: {
@@ -30,10 +35,9 @@ describe('AccountComponent', () => {
       statusText: 'OK',
       count: null,
     }),
-    signOut: async () => ({ error: null }),
     downloadImage: async () => ({ data: null, error: null }),
     uploadAvatar: async () => ({ data: null, error: null }),
-  } as unknown as SupabaseService;
+  } as unknown as ProfileService;
 
   const mockUser = {
     id: 'user-id',
@@ -43,7 +47,10 @@ describe('AccountComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AccountComponent],
-      providers: [{ provide: SupabaseService, useValue: supabaseServiceMock }],
+      providers: [
+        { provide: AuthService, useValue: authServiceMock },
+        { provide: ProfileService, useValue: profileServiceMock },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AccountComponent);

@@ -14,7 +14,8 @@ import { User } from '@supabase/supabase-js';
 import { merge, startWith } from 'rxjs';
 
 import { Profile } from '../../interfaces/profile.interface';
-import { SupabaseService } from '../../services/supabase';
+import { AuthService } from '../../services/auth';
+import { ProfileService } from '../../services/profile';
 import {
   createUsernameAvailabilityValidator,
   getUsernameStatus,
@@ -30,7 +31,8 @@ import { AvatarComponent } from '../avatar/avatar';
   imports: [ReactiveFormsModule, AvatarComponent],
 })
 export class AccountComponent implements OnInit {
-  private readonly supabase = inject(SupabaseService);
+  private readonly auth = inject(AuthService);
+  private readonly profiles = inject(ProfileService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly destroyRef = inject(DestroyRef);
@@ -42,7 +44,7 @@ export class AccountComponent implements OnInit {
   readonly updateProfileForm = this.formBuilder.nonNullable.group({
     username: this.formBuilder.nonNullable.control('', {
       validators: usernameSyncValidators,
-      asyncValidators: [createUsernameAvailabilityValidator(this.supabase, () => this.user)],
+      asyncValidators: [createUsernameAvailabilityValidator(this.profiles, () => this.user)],
     }),
     website: ['', [Validators.pattern(/^$|^https?:\/\/\S+$/i)]],
     avatar_url: [''],
@@ -106,7 +108,7 @@ export class AccountComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     if (!this.user) {
-      this.user = await this.supabase.getUser();
+      this.user = await this.auth.getUser();
     }
 
     if (!this.user) {
@@ -141,7 +143,7 @@ export class AccountComponent implements OnInit {
         throw new Error('No active user is available for profile loading.');
       }
 
-      const { data: profile, error, status } = await this.supabase.profile(this.user);
+      const { data: profile, error, status } = await this.profiles.profile(this.user);
 
       if (error && status !== 406) {
         throw error;
@@ -178,7 +180,7 @@ export class AccountComponent implements OnInit {
       const website = this.updateProfileForm.controls.website.getRawValue()?.trim();
       const avatar_url = this.updateProfileForm.controls.avatar_url.getRawValue()?.trim();
 
-      const { error } = await this.supabase.updateProfile({
+      const { error } = await this.profiles.updateProfile({
         id: this.user.id,
         username,
         website,
@@ -204,7 +206,7 @@ export class AccountComponent implements OnInit {
 
     try {
       this.loading = true;
-      await this.supabase.signOut();
+      await this.auth.signOut();
     } catch (error) {
       this.errorMessage = error instanceof Error ? error.message : 'Unable to sign out.';
     } finally {

@@ -1,7 +1,7 @@
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { User } from '@supabase/supabase-js';
-import { SupabaseService } from './services/supabase';
+import { AuthService } from './services/auth';
 
 @Component({
   selector: 'app-root',
@@ -10,7 +10,7 @@ import { SupabaseService } from './services/supabase';
   styleUrl: './app.css',
 })
 export class App {
-  private readonly supabase = inject(SupabaseService);
+  private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -20,7 +20,7 @@ export class App {
   constructor() {
     void this.loadCurrentUser();
 
-    const { data: authListener } = this.supabase.authChanges((_event, session) => {
+    const { data: authListener } = this.auth.authChanges((_event, session) => {
       const user = session?.user ?? null;
 
       this.user.set(user);
@@ -32,7 +32,7 @@ export class App {
   }
 
   private async loadCurrentUser(): Promise<void> {
-    const user = await this.supabase.getUser();
+    const user = await this.auth.getUser();
 
     this.user.set(user);
   }

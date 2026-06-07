@@ -1,10 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { App } from './app';
-import { SupabaseService } from './services/supabase';
+import { AuthService } from './services/auth';
 
 describe('App', () => {
   beforeEach(async () => {
-    const supabaseServiceMock = {
+    const authServiceMock = {
       getUser: async () => null,
       authChanges: () => ({
         data: {
@@ -13,12 +13,11 @@ describe('App', () => {
           },
         },
       }),
-      userHasUsername: async () => false,
-    } as unknown as SupabaseService;
+    } as unknown as AuthService;
 
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [{ provide: SupabaseService, useValue: supabaseServiceMock }],
+      providers: [{ provide: AuthService, useValue: authServiceMock }],
     }).compileComponents();
   });
 

@@ -8,7 +8,7 @@ import {
   Output,
 } from '@angular/core';
 import { SafeResourceUrl, DomSanitizer } from '@angular/platform-browser';
-import { SupabaseService } from '../../services/supabase';
+import { ProfileService } from '../../services/profile';
 
 @Component({
   selector: 'app-avatar',
@@ -38,7 +38,7 @@ export class AvatarComponent {
   @Output() upload = new EventEmitter<string>();
 
   constructor(
-    private readonly supabase: SupabaseService,
+    private readonly profiles: ProfileService,
     private readonly dom: DomSanitizer,
     private readonly cdr: ChangeDetectorRef,
     private readonly destroyRef: DestroyRef,
@@ -50,7 +50,7 @@ export class AvatarComponent {
 
   async downloadImage(path: string) {
     try {
-      const { data } = await this.supabase.downloadImage(path);
+      const { data } = await this.profiles.downloadImage(path);
       if (data instanceof Blob) {
         this.revokeAvatarObjectUrl();
         this.avatarObjectUrl = URL.createObjectURL(data);
@@ -79,7 +79,7 @@ export class AvatarComponent {
       const fileExt = this.resolveFileExtension(file);
       const filePath = `${crypto.randomUUID()}.${fileExt}`;
 
-      await this.supabase.uploadAvatar(filePath, file);
+      await this.profiles.uploadAvatar(filePath, file);
       this.upload.emit(filePath);
     } catch (error) {
       this.errorMessage = error instanceof Error ? error.message : 'Unable to upload your image.';
