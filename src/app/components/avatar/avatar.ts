@@ -15,7 +15,6 @@ import { SupabaseService } from '../../services/supabase';
   templateUrl: './avatar.html',
   styleUrls: ['./avatar.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: true,
 })
 export class AvatarComponent {
   _avatarUrl: SafeResourceUrl | undefined;
