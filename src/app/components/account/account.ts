@@ -65,6 +65,12 @@ export class AccountComponent implements OnInit {
     return getUsernameStatus(this.usernameControl);
   });
 
+  protected readonly showUsernameAvailabilityFeedback = computed(() => {
+    this.usernameControlChanges();
+
+    return this.usernameControl.dirty;
+  });
+
   @Input()
   user: User | null = null;
 
