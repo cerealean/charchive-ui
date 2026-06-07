@@ -35,6 +35,17 @@ interface ParsedUploadPayload {
   canonicalJson: Record<string, unknown>;
 }
 
+interface PngExtractionResult {
+  payloads: Record<string, unknown>[];
+  foundCharaKeyword: boolean;
+  hadExtractionError: boolean;
+}
+
+interface PngTextEntry {
+  keyword: string;
+  value: string | null;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -296,15 +307,11 @@ export class CardService {
     }
 
     if (this.isPngFile(file)) {
-      const pngPayload = await this.parsePngUpload(file);
-
-      if (pngPayload) {
-        return pngPayload;
-      }
+      return this.parsePngUpload(file);
     }
 
     if (file.type.startsWith('image/')) {
-      return this.parseImageUpload(file);
+      throw new Error("There isn't card data in the image.");
     }
 
     throw new Error('Only JSON and image uploads are currently supported.');
@@ -328,16 +335,20 @@ export class CardService {
     return this.buildParsedPayloadFromRecord(payloadRecord, this.fileBaseName(file.name));
   }
 
-  private async parsePngUpload(file: File): Promise<ParsedUploadPayload | null> {
-    const payloadRecords = await this.extractPngCharacterPayloads(file);
+  private async parsePngUpload(file: File): Promise<ParsedUploadPayload> {
+    const extraction = await this.extractPngCharacterPayloads(file);
 
-    if (payloadRecords.length === 0) {
-      return null;
+    if (extraction.payloads.length === 0) {
+      if (extraction.foundCharaKeyword || extraction.hadExtractionError) {
+        throw new Error('There was a problem trying to get the data from the image.');
+      }
+
+      throw new Error("There isn't card data in the image.");
     }
 
     const preferredPayload =
-      payloadRecords.find((record) => this.detectSourceFormat(record) === 'chara_card_v2') ??
-      payloadRecords[0];
+      extraction.payloads.find((record) => this.detectSourceFormat(record) === 'chara_card_v2') ??
+      extraction.payloads[0];
 
     return this.buildParsedPayloadFromRecord(preferredPayload, this.fileBaseName(file.name));
   }
@@ -376,14 +387,18 @@ export class CardService {
     };
   }
 
-  private async extractPngCharacterPayloads(file: File): Promise<Record<string, unknown>[]> {
+  private async extractPngCharacterPayloads(file: File): Promise<PngExtractionResult> {
     const bytes = new Uint8Array(await file.arrayBuffer());
+    const result: PngExtractionResult = {
+      payloads: [],
+      foundCharaKeyword: false,
+      hadExtractionError: false,
+    };
 
     if (!this.hasPngSignature(bytes)) {
-      return [];
+      return result;
     }
 
-    const payloads: Record<string, unknown>[] = [];
     let offset = 8;
 
     while (offset + 12 <= bytes.length) {
@@ -393,6 +408,7 @@ export class CardService {
       const dataEnd = dataStart + length;
 
       if (dataEnd + 4 > bytes.length) {
+        result.hadExtractionError = true;
         break;
       }
 
@@ -407,10 +423,19 @@ export class CardService {
             continue;
           }
 
+          result.foundCharaKeyword = true;
+
+          if (entry.value === null) {
+            result.hadExtractionError = true;
+            continue;
+          }
+
           const decodedPayload = this.decodeEmbeddedCardPayload(entry.value);
 
           if (decodedPayload) {
-            payloads.push(decodedPayload);
+            result.payloads.push(decodedPayload);
+          } else {
+            result.hadExtractionError = true;
           }
         }
       }
@@ -422,7 +447,7 @@ export class CardService {
       }
     }
 
-    return payloads;
+    return result;
   }
 
   private hasPngSignature(bytes: Uint8Array): boolean {
@@ -458,7 +483,7 @@ export class CardService {
   private async extractPngTextEntries(
     chunkType: 'tEXt' | 'iTXt' | 'zTXt',
     chunkData: Uint8Array,
-  ): Promise<Array<{ keyword: string; value: string }>> {
+  ): Promise<PngTextEntry[]> {
     if (chunkType === 'tEXt') {
       const separator = chunkData.indexOf(0);
 
@@ -485,14 +510,14 @@ export class CardService {
       const compressionMethod = chunkData[separator + 1];
 
       if (compressionMethod !== 0) {
-        return [];
+        return [{ keyword, value: null }];
       }
 
       const compressed = chunkData.subarray(separator + 2);
       const value = await this.inflateToUtf8(compressed);
 
       if (value === null) {
-        return [];
+        return [{ keyword, value: null }];
       }
 
       return [{ keyword, value }];
@@ -536,6 +561,8 @@ export class CardService {
       if (value !== null) {
         return [{ keyword, value }];
       }
+
+      return [{ keyword, value: null }];
     }
 
     return [];
@@ -622,58 +649,6 @@ export class CardService {
     } catch {
       return null;
     }
-  }
-
-  private parseImageUpload(file: File): ParsedUploadPayload {
-    const baseName = this.fileBaseName(file.name);
-    const uploadedAt = new Date().toISOString();
-
-    return {
-      title: baseName,
-      characterName: baseName,
-      creatorNotes: null,
-      sourceFormat: 'unknown',
-      sourceApp: 'unknown',
-      spec: null,
-      specVersion: null,
-      rawJson: {
-        upload: {
-          filename: file.name,
-          mime_type: file.type,
-          size_bytes: file.size,
-          uploaded_at: uploadedAt,
-        },
-      },
-      canonicalJson: {
-        schema: 'charchive_card',
-        schema_version: 1,
-        character: {
-          name: baseName,
-          description: '',
-          personality: '',
-          scenario: '',
-          first_message: '',
-          alternate_greetings: [],
-          example_messages: '',
-          system_prompt: '',
-          post_history_instructions: '',
-          creator_notes: '',
-        },
-        creator: {
-          name: '',
-          notes: '',
-        },
-        tags: [],
-        character_book: null,
-        extensions: {},
-        source: {
-          format: 'unknown',
-          app: 'unknown',
-          spec: null,
-          spec_version: null,
-        },
-      },
-    };
   }
 
   private buildCanonicalJson(
