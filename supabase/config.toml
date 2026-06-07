@@ -124,6 +124,12 @@ file_size_limit = "50MiB"
 allowed_mime_types = ["application/json", "image/*"]
 objects_path = "./card-files/cards"
 
+[storage.buckets."profile-avatars"]
+public = false
+file_size_limit = "5MiB"
+allowed_mime_types = ["image/*"]
+objects_path = "./profile-avatars"
+
 # Allow connections via S3 compatible clients
 [storage.s3_protocol]
 enabled = true
