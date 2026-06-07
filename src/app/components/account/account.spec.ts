@@ -58,7 +58,9 @@ describe('AccountComponent', () => {
   });
 
   it('does not show username availability feedback before editing username', () => {
-    expect(component['showUsernameAvailabilityFeedback']()).toBe(false);
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    expect(compiled.textContent).not.toContain('That username is available.');
   });
 
   it('marks the current username as available after profile load', async () => {
@@ -74,8 +76,9 @@ describe('AccountComponent', () => {
       await fixture.whenStable();
       fixture.detectChanges();
 
-      expect(component['showUsernameAvailabilityFeedback']()).toBe(true);
-      expect(component['usernameStatus']()).toBe('available');
+      const compiled = fixture.nativeElement as HTMLElement;
+
+      expect(compiled.textContent).toContain('That username is available.');
     } finally {
       vi.useRealTimers();
     }
