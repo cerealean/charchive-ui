@@ -4,11 +4,7 @@ import { Mock, vi } from 'vitest';
 
 import { SupabaseService } from './supabase';
 
-const {
-  createClientMock,
-  fromMock,
-  queryBuilder,
-} = vi.hoisted(() => {
+const { createClientMock, fromMock, queryBuilder } = vi.hoisted(() => {
   const queryBuilder = {
     select: vi.fn(),
     eq: vi.fn(),
@@ -28,9 +24,8 @@ const {
 });
 
 vi.mock('@supabase/supabase-js', async () => {
-  const actual = await vi.importActual<typeof import('@supabase/supabase-js')>(
-    '@supabase/supabase-js',
-  );
+  const actual =
+    await vi.importActual<typeof import('@supabase/supabase-js')>('@supabase/supabase-js');
 
   return {
     ...actual,

@@ -41,7 +41,7 @@ export const routes: Routes = [
       },
       {
         path: 'cards',
-        loadComponent: () => import('./components/cards/index').then((m) => m.CardsComponent),
+        loadComponent: () => import('./components/cards/cards').then((m) => m.CardsComponent),
       },
       {
         path: 'cards/:id',
