@@ -8,7 +8,7 @@
           </p>
           <h1 class="mt-2 text-3xl font-black tracking-tight sm:text-4xl">My cards</h1>
           <p class="mt-2 text-sm text-neutral-content/75 sm:text-base">
-            Skeleton list of cards you own. Data wiring to Supabase comes next.
+            Cards uploaded by your account.
           </p>
         </div>
 
@@ -30,24 +30,38 @@
       </div>
     }
 
-    <div class="grid gap-4">
-      @for (card of cards(); track card.id) {
-        <article class="card border border-base-300 bg-base-100 shadow-sm">
-          <div class="card-body gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div class="space-y-1">
-              <h2 class="text-xl font-semibold text-base-content">{{ card.title }}</h2>
-              <div class="flex flex-wrap items-center gap-2 text-sm text-base-content/70">
-                <span class="badge badge-outline">{{ card.visibility }}</span>
-                <span>Updated {{ card.updatedAt }}</span>
+    @if (loading()) {
+      <div class="alert alert-info alert-soft" role="status">
+        <span>Loading your cards...</span>
+      </div>
+    } @else if (errorMessage()) {
+      <div class="alert alert-error alert-soft" role="alert">
+        <span>{{ errorMessage() }}</span>
+      </div>
+    } @else if (cards().length === 0) {
+      <div class="alert alert-ghost border border-base-300" role="status">
+        <span>You have not uploaded any cards yet.</span>
+      </div>
+    } @else {
+      <div class="grid gap-4">
+        @for (card of cards(); track card.id) {
+          <article class="card border border-base-300 bg-base-100 shadow-sm">
+            <div class="card-body gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div class="space-y-1">
+                <h2 class="text-xl font-semibold text-base-content">{{ card.title }}</h2>
+                <div class="flex flex-wrap items-center gap-2 text-sm text-base-content/70">
+                  <span class="badge badge-outline">{{ card.visibility }}</span>
+                  <span>Updated {{ card.updatedAt }}</span>
+                </div>
               </div>
-            </div>
 
-            <button type="button" class="btn btn-outline" (click)="viewCard(card.id)">
-              Open card
-            </button>
-          </div>
-        </article>
-      }
-    </div>
+              <button type="button" class="btn btn-outline" (click)="viewCard(card.id)">
+                Open card
+              </button>
+            </div>
+          </article>
+        }
+      </div>
+    }
   </div>
 </section>

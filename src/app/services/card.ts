@@ -4,11 +4,34 @@ import { CardDetailRecord } from '../interfaces/card-detail-record.interface';
 import { CardListRecord } from '../interfaces/card-list-record.interface';
 import { SupabaseService } from './supabase';
 
+interface OwnedCardListRecord {
+  id: string;
+  title: string;
+  visibility: 'private' | 'unlisted' | 'public';
+  updated_at: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
 export class CardService {
   private readonly supabase = inject(SupabaseService);
+
+  cardsOwnedByUser(ownerId: string) {
+    return this.supabase.client
+      .from('cards')
+      .select(
+        `
+          id,
+          title,
+          visibility,
+          updated_at
+        `,
+      )
+      .eq('owner_id', ownerId)
+      .order('updated_at', { ascending: false })
+      .returns<OwnedCardListRecord[]>();
+  }
 
   cardById(cardId: string) {
     return this.supabase.client
