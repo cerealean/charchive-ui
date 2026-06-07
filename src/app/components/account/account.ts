@@ -5,11 +5,20 @@ import {
   DestroyRef,
   Input,
   OnInit,
+  computed,
   inject,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { User } from '@supabase/supabase-js';
+import { merge, startWith } from 'rxjs';
+
 import { Profile, SupabaseService } from '../../services/supabase';
+import {
+  createUsernameAvailabilityValidator,
+  getUsernameStatus,
+  usernameSyncValidators,
+} from '../../shared/username-validation';
 import { AvatarComponent } from '../avatar/avatar';
 
 @Component({
@@ -30,9 +39,30 @@ export class AccountComponent implements OnInit {
   errorMessage = '';
   profile?: Profile;
   readonly updateProfileForm = this.formBuilder.nonNullable.group({
-    username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(64)]],
+    username: this.formBuilder.nonNullable.control('', {
+      validators: usernameSyncValidators,
+      asyncValidators: [createUsernameAvailabilityValidator(this.supabase, () => this.user)],
+    }),
     website: ['', [Validators.pattern(/^$|^https?:\/\/\S+$/i)]],
     avatar_url: [''],
+  });
+
+  private readonly usernameControlChanges = toSignal(
+    merge(this.usernameControl.valueChanges, this.usernameControl.statusChanges).pipe(
+      startWith(null),
+    ),
+  );
+
+  private readonly updateProfileFormChanges = toSignal(
+    merge(this.updateProfileForm.valueChanges, this.updateProfileForm.statusChanges).pipe(
+      startWith(null),
+    ),
+  );
+
+  protected readonly usernameStatus = computed(() => {
+    this.usernameControlChanges();
+
+    return getUsernameStatus(this.usernameControl);
   });
 
   @Input()
@@ -48,6 +78,12 @@ export class AccountComponent implements OnInit {
 
   get usernameControl() {
     return this.updateProfileForm.controls.username;
+  }
+
+  protected get saveDisabled() {
+    this.updateProfileFormChanges();
+
+    return this.loading || this.updateProfileForm.pending || this.updateProfileForm.invalid;
   }
 
   async updateAvatar(event: string): Promise<void> {
@@ -84,6 +120,7 @@ export class AccountComponent implements OnInit {
       website: website ?? '',
       avatar_url: avatar_url ?? '',
     });
+    this.usernameControl.updateValueAndValidity();
 
     this.detectChangesSafely();
   }

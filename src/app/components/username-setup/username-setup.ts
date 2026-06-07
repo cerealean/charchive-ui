@@ -3,23 +3,19 @@ import {
   Component,
   DestroyRef,
   OnInit,
-  computed,
   inject,
   signal,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import {
-  AbstractControl,
-  FormBuilder,
-  ReactiveFormsModule,
-  ValidationErrors,
-  Validators,
-} from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { User } from '@supabase/supabase-js';
-import { catchError, from, map, merge, of, startWith, switchMap, timer } from 'rxjs';
 
 import { SupabaseService } from '../../services/supabase';
+import {
+  createUsernameAvailabilityValidator,
+  getUsernameStatus,
+  usernameSyncValidators,
+} from '../../shared/username-validation';
 
 @Component({
   selector: 'app-username-setup',
@@ -41,50 +37,21 @@ export class UsernameSetupComponent implements OnInit {
 
   readonly usernameForm = this.formBuilder.nonNullable.group({
     username: this.formBuilder.nonNullable.control('', {
-      validators: [Validators.required, Validators.minLength(3), Validators.maxLength(64)],
-      asyncValidators: [this.usernameAvailabilityValidator.bind(this)],
+      validators: usernameSyncValidators,
+      asyncValidators: [createUsernameAvailabilityValidator(this.supabase, () => this.user)],
     }),
-  });
-
-  private readonly usernameControlChanges = toSignal(
-    merge(this.usernameControl.valueChanges, this.usernameControl.statusChanges).pipe(
-      startWith(null),
-    ),
-  );
-
-  private readonly usernameFormChanges = toSignal(
-    merge(this.usernameForm.valueChanges, this.usernameForm.statusChanges).pipe(startWith(null)),
-  );
-
-  protected readonly usernameStatus = computed(() => {
-    this.usernameControlChanges();
-
-    const control = this.usernameControl;
-    const value = control.getRawValue().trim();
-
-    if (!value || control.pending) {
-      return control.pending ? 'checking' : 'idle';
-    }
-
-    if (control.hasError('usernameTaken') || control.hasError('usernameLookupFailed')) {
-      return 'taken';
-    }
-
-    if (control.valid) {
-      return 'available';
-    }
-
-    return 'idle';
-  });
-
-  protected readonly submitDisabled = computed(() => {
-    this.usernameFormChanges();
-
-    return this.loading() || this.usernameForm.pending || this.usernameForm.invalid;
   });
 
   get usernameControl() {
     return this.usernameForm.controls.username;
+  }
+
+  protected get usernameStatus() {
+    return getUsernameStatus(this.usernameControl);
+  }
+
+  protected get submitDisabled() {
+    return this.loading() || this.usernameForm.pending || this.usernameForm.invalid;
   }
 
   async ngOnInit(): Promise<void> {
@@ -142,19 +109,5 @@ export class UsernameSetupComponent implements OnInit {
         this.loading.set(false);
       }
     }
-  }
-
-  private usernameAvailabilityValidator(control: AbstractControl<string>) {
-    const username = control.getRawValue().trim();
-
-    if (!username || username.length < 3 || !this.user) {
-      return of(null);
-    }
-
-    return timer(250).pipe(
-      switchMap(() => from(this.supabase.isUsernameAvailable(username, this.user?.id))),
-      map((isAvailable): ValidationErrors | null => (isAvailable ? null : { usernameTaken: true })),
-      catchError(() => of({ usernameLookupFailed: true })),
-    );
   }
 }

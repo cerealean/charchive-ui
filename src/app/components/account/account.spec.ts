@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { User } from '@supabase/supabase-js';
+import { vi } from 'vitest';
 
 import { AccountComponent } from './account';
 import { SupabaseService } from '../../services/supabase';
@@ -10,6 +11,7 @@ describe('AccountComponent', () => {
 
   const supabaseServiceMock = {
     getUser: async () => null,
+    isUsernameAvailable: vi.fn(async () => true),
     profile: async () => ({
       data: {
         username: 'Demo User',
@@ -53,5 +55,15 @@ describe('AccountComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('marks the current username as available after profile load', async () => {
+    component.usernameControl.markAsTouched();
+    component.usernameControl.updateValueAndValidity();
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(component['usernameStatus']()).toBe('available');
   });
 });
