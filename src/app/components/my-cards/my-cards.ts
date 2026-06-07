@@ -18,6 +18,7 @@ export class MyCardsComponent implements OnInit {
 
   protected readonly cards = signal<readonly CardListItem[]>([]);
   protected readonly loading = signal(false);
+  protected readonly uploading = signal(false);
   protected readonly errorMessage = signal('');
 
   protected readonly uploadStatus = signal<string>('');
@@ -30,7 +31,7 @@ export class MyCardsComponent implements OnInit {
     void this.router.navigate(['/cards', cardId]);
   }
 
-  protected handleUpload(event: Event): void {
+  protected async handleUpload(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0] ?? null;
 
@@ -39,8 +40,30 @@ export class MyCardsComponent implements OnInit {
       return;
     }
 
-    this.uploadStatus.set(`Selected ${file.name}. Upload flow will be wired in the next step.`);
-    input.value = '';
+    this.uploading.set(true);
+    this.errorMessage.set('');
+    this.uploadStatus.set(`Uploading ${file.name}...`);
+
+    try {
+      const user = await this.auth.getUser();
+
+      if (!user) {
+        throw new Error('Sign in to upload a card.');
+      }
+
+      const creatorName = user.user_metadata['user_name'] ?? user.email ?? null;
+
+      const result = await this.cardsService.uploadCardFromFile(user.id, file, creatorName);
+      this.uploadStatus.set(`Uploaded ${result.title}.`);
+      await this.loadMyCards();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to upload this file.';
+      this.errorMessage.set(message);
+      this.uploadStatus.set('');
+    } finally {
+      this.uploading.set(false);
+      input.value = '';
+    }
   }
 
   private async loadMyCards(): Promise<void> {

@@ -12,12 +12,17 @@
           </p>
         </div>
 
-        <label class="btn btn-primary">
+        <label
+          class="btn btn-primary"
+          [class.btn-disabled]="uploading()"
+          [attr.aria-busy]="uploading()"
+        >
           Upload new card
           <input
             type="file"
             class="sr-only"
             accept="application/json,image/*"
+            [disabled]="uploading()"
             (change)="handleUpload($event)"
           />
         </label>
