@@ -145,6 +145,7 @@ export class SupabaseService {
           )
         `,
       )
+      .eq('visibility', 'public')
       .order('created_at', { ascending: false })
       .limit(limit)
       .returns<CardListRecord[]>();
