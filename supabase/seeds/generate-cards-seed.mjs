@@ -14,7 +14,7 @@ const outputSqlPath = path.join(repoRoot, 'supabase', 'seed.sql');
 const storageCardFilesDir = path.join(repoRoot, 'supabase', 'card-files');
 const storageCardFilesGeneratedDir = path.join(storageCardFilesDir, 'cards');
 
-const SEED_COUNT = 10;
+const SEED_COUNT = 100;
 const FAKER_SEED = 20260606;
 
 const OWNER_USERS = [

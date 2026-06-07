@@ -26,7 +26,7 @@ The generator script:
 - extracts embedded `chara` metadata from the example PNGs
 - generates `supabase/seed.sql`
 
-It produces about 10 records for local development.
+Row volume is controlled by `SEED_COUNT` in `supabase/seeds/generate-cards-seed.mjs`.
 
 ## Storage Object Seeding
 
@@ -52,6 +52,8 @@ Generate seed SQL and stage storage objects:
 ```bash
 npm run seed:cards:generate
 ```
+
+When you change `SEED_COUNT`, run this command again before `supabase db reset --local` so `supabase/seed.sql` is regenerated with the new row count.
 
 Run the full local refresh flow:
 
