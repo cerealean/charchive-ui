@@ -105,6 +105,42 @@ export class SupabaseService {
       .returns<CardListRecord[]>();
   }
 
+  publicCardsPage(page: number, pageSize: number) {
+    const safePage = Math.max(1, Math.trunc(page));
+    const safePageSize = Math.max(1, Math.trunc(pageSize));
+    const from = (safePage - 1) * safePageSize;
+    const to = from + safePageSize - 1;
+
+    return this.supabase
+      .from('cards')
+      .select(
+        `
+          id,
+          owner_id,
+          title,
+          tagline,
+          created_at,
+          current_version:card_versions!cards_current_version_id_fkey(
+            character_name
+          ),
+          avatar_file:card_files!cards_avatar_file_id_fkey(
+            storage_path
+          ),
+          tags:card_tags(
+            tag:tags(
+              name,
+              slug
+            )
+          )
+        `,
+        { count: 'exact' },
+      )
+      .eq('visibility', 'public')
+      .order('created_at', { ascending: false })
+      .range(from, to)
+      .returns<CardListRecord[]>();
+  }
+
   profilesByIds(userIds: readonly string[]) {
     return this.supabase.from('profiles').select('id, username').in('id', userIds);
   }

@@ -1,5 +1,4 @@
 import { TestBed } from '@angular/core/testing';
-import * as supabaseJs from '@supabase/supabase-js';
 import { Mock, vi } from 'vitest';
 
 import { SupabaseService } from './supabase';
@@ -9,7 +8,7 @@ const { createClientMock, fromMock, queryBuilder } = vi.hoisted(() => {
     select: vi.fn(),
     eq: vi.fn(),
     order: vi.fn(),
-    limit: vi.fn(),
+    range: vi.fn(),
     returns: vi.fn(),
   };
 
@@ -24,11 +23,7 @@ const { createClientMock, fromMock, queryBuilder } = vi.hoisted(() => {
 });
 
 vi.mock('@supabase/supabase-js', async () => {
-  const actual =
-    await vi.importActual<typeof import('@supabase/supabase-js')>('@supabase/supabase-js');
-
   return {
-    ...actual,
     createClient: createClientMock,
   };
 });
@@ -39,7 +34,7 @@ describe('SupabaseService', () => {
   let selectSpy: Mock;
   let eqSpy: Mock;
   let orderSpy: Mock;
-  let limitSpy: Mock;
+  let rangeSpy: Mock;
   let returnsSpy: Mock;
 
   beforeEach(() => {
@@ -48,7 +43,7 @@ describe('SupabaseService', () => {
     queryBuilder.select.mockReturnValue(queryBuilder);
     queryBuilder.eq.mockReturnValue(queryBuilder);
     queryBuilder.order.mockReturnValue(queryBuilder);
-    queryBuilder.limit.mockReturnValue(queryBuilder);
+    queryBuilder.range.mockReturnValue(queryBuilder);
     queryBuilder.returns.mockReturnValue({ data: [], error: null });
 
     const mockClient = {
@@ -57,15 +52,13 @@ describe('SupabaseService', () => {
       storage: {},
     };
 
-    createClientMock.mockReturnValue(
-      mockClient as unknown as ReturnType<typeof supabaseJs.createClient>,
-    );
+    createClientMock.mockReturnValue(mockClient);
 
     fromSpy = mockClient.from;
     selectSpy = queryBuilder.select;
     eqSpy = queryBuilder.eq;
     orderSpy = queryBuilder.order;
-    limitSpy = queryBuilder.limit;
+    rangeSpy = queryBuilder.range;
     returnsSpy = queryBuilder.returns;
 
     TestBed.configureTestingModule({});
@@ -76,14 +69,14 @@ describe('SupabaseService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('publicCards should only query public visibility', () => {
-    service.publicCards(48);
+  it('publicCardsPage should only query public visibility with pagination', () => {
+    service.publicCardsPage(2, 10);
 
     expect(fromSpy).toHaveBeenCalledWith('cards');
-    expect(selectSpy).toHaveBeenCalled();
+    expect(selectSpy).toHaveBeenCalledWith(expect.any(String), { count: 'exact' });
     expect(eqSpy).toHaveBeenCalledWith('visibility', 'public');
     expect(orderSpy).toHaveBeenCalledWith('created_at', { ascending: false });
-    expect(limitSpy).toHaveBeenCalledWith(48);
+    expect(rangeSpy).toHaveBeenCalledWith(10, 19);
     expect(returnsSpy).toHaveBeenCalled();
   });
 });
