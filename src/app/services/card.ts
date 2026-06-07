@@ -9,6 +9,9 @@ interface OwnedCardListRecord {
   title: string;
   visibility: 'private' | 'unlisted' | 'public';
   updated_at: string;
+  avatar_file: {
+    storage_path: string;
+  } | null;
 }
 
 interface UploadedCardRecord {
@@ -60,7 +63,10 @@ export class CardService {
           id,
           title,
           visibility,
-          updated_at
+          updated_at,
+          avatar_file:card_files!cards_avatar_file_id_fkey(
+            storage_path
+          )
         `,
       )
       .eq('owner_id', ownerId)

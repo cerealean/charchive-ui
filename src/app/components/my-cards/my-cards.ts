@@ -89,6 +89,8 @@ export class MyCardsComponent implements OnInit {
         throw error;
       }
 
+      const imageUrlByCardId = await this.resolveCardImageUrls(data ?? []);
+
       const cards = (data ?? []).map((card) => ({
         id: card.id,
         name: card.title,
@@ -96,7 +98,7 @@ export class MyCardsComponent implements OnInit {
         uploader: 'You',
         createdAtIso: card.updated_at,
         createdAgo: `Updated ${this.formatRelativeTime(card.updated_at)}`,
-        imageUrl: null,
+        imageUrl: imageUrlByCardId.get(card.id) ?? null,
         tags: [
           {
             slug: card.visibility,
@@ -112,6 +114,34 @@ export class MyCardsComponent implements OnInit {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  private async resolveCardImageUrls(
+    cards: Awaited<ReturnType<CardService['cardsOwnedByUser']>>['data'] extends infer T
+      ? NonNullable<T>
+      : never,
+  ): Promise<Map<string, string>> {
+    const entries = await Promise.all(
+      cards.map(async (card) => {
+        const storagePath = card.avatar_file?.storage_path;
+
+        if (!storagePath) {
+          return [card.id, null] as const;
+        }
+
+        const { data, error } = await this.cardsService.createCardFileSignedUrl(storagePath, 3600);
+
+        if (error) {
+          return [card.id, null] as const;
+        }
+
+        return [card.id, data?.signedUrl ?? null] as const;
+      }),
+    );
+
+    return new Map(
+      entries.filter((entry): entry is readonly [string, string] => entry[1] !== null),
+    );
   }
 
   private formatRelativeTime(isoDate: string): string {
