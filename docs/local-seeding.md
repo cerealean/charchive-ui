@@ -33,7 +33,13 @@ Row volume is controlled by `SEED_COUNT` in `supabase/seeds/generate-cards-seed.
 Binary files are staged into:
 - `supabase/card-files/cards/...`
 
-Supabase local storage then imports those staged files into the `card-files` bucket during `supabase db reset --local`.
+When `storage.buckets.<bucket>.objects_path` is not configured, `supabase db reset --local` does not import staged files automatically.
+
+In that setup, run the explicit storage seed script after reset:
+
+```bash
+npm run seed:storage:local
+```
 
 Only files matching the bucket restrictions are staged and uploaded.
 
@@ -43,7 +49,8 @@ Only files matching the bucket restrictions are staged and uploaded.
 2. The script writes `supabase/seed.sql`.
 3. The script stages PNG files under `supabase/card-files/cards/...`.
 4. Run `supabase db reset --local`.
-5. Supabase applies migrations, runs SQL seeds, and imports staged storage objects.
+5. Run `npm run seed:storage:local`.
+6. Supabase applies migrations, runs SQL seeds, then the storage seed script uploads staged objects.
 
 ## Commands
 

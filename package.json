@@ -11,7 +11,7 @@
     "serve:ssr:charchive-ui": "node dist/charchive-ui/server/server.mjs",
     "seed:cards:generate": "node ./supabase/seeds/generate-cards-seed.mjs",
     "seed:storage:local": "node ./supabase/seeds/seed-storage-local.mjs",
-    "seed:cards:refresh": "npm run seed:cards:generate && supabase db reset --local"
+    "seed:cards:refresh": "npm run seed:cards:generate && supabase db reset --local && npm run seed:storage:local"
   },
   "private": true,
   "packageManager": "npm@11.13.0",
