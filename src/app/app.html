@@ -5,6 +5,9 @@
   <div class="flex-none">
     @if (isLoggedIn()) {
       <div class="flex items-center gap-2">
+        <button type="button" class="btn btn-ghost btn-sm sm:btn-md" (click)="navigateTo('/cards')">
+          Browse cards
+        </button>
         <button
           type="button"
           class="btn btn-outline btn-sm sm:btn-md"
