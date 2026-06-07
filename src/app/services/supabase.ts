@@ -83,36 +83,6 @@ export class SupabaseService {
       .maybeSingle<CardDetailRecord>();
   }
 
-  publicCards(limit = 40) {
-    return this.supabase
-      .from('cards')
-      .select(
-        `
-          id,
-          owner_id,
-          title,
-          tagline,
-          created_at,
-          current_version:card_versions!cards_current_version_id_fkey(
-            character_name
-          ),
-          avatar_file:card_files!cards_avatar_file_id_fkey(
-            storage_path
-          ),
-          tags:card_tags(
-            tag:tags(
-              name,
-              slug
-            )
-          )
-        `,
-      )
-      .eq('visibility', 'public')
-      .order('created_at', { ascending: false })
-      .limit(limit)
-      .returns<CardListRecord[]>();
-  }
-
   publicCardsPage(page: number, pageSize: number) {
     const safePage = Math.max(1, Math.trunc(page));
     const safePageSize = Math.max(1, Math.trunc(pageSize));
