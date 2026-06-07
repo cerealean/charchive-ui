@@ -15,18 +15,64 @@ import { Profile } from '../interfaces/profile.interface';
   providedIn: 'root',
 })
 export class SupabaseService {
+  private static readonly TOKEN_REFRESH_LEAD_SECONDS = 5 * 60;
+  private static readonly MIN_REFRESH_INTERVAL_MS = 30_000;
+
   private supabase: SupabaseClient;
+  private lastRefreshAttemptAt = 0;
 
   constructor() {
     this.supabase = createClient(environment.supabaseUrl, environment.supabasePublishableKey);
   }
 
   async getUser(): Promise<User | null> {
+    await this.refreshSessionIfNeeded();
+
+    const {
+      data: { session },
+    } = await this.supabase.auth.getSession();
+
+    if (session?.user) {
+      return session.user;
+    }
+
     const { data, error } = await this.supabase.auth.getUser();
     if (error) {
       return null;
     }
     return data.user;
+  }
+
+  async refreshSessionIfNeeded(force = false): Promise<void> {
+    const now = Date.now();
+    const enoughTimeSinceLastAttempt =
+      now - this.lastRefreshAttemptAt >= SupabaseService.MIN_REFRESH_INTERVAL_MS;
+
+    if (!force && !enoughTimeSinceLastAttempt) {
+      return;
+    }
+
+    const {
+      data: { session },
+      error,
+    } = await this.supabase.auth.getSession();
+
+    if (error || !session) {
+      return;
+    }
+
+    const shouldRefresh =
+      force ||
+      session.expires_at === undefined ||
+      session.expires_at === null ||
+      session.expires_at - Math.floor(now / 1000) <= SupabaseService.TOKEN_REFRESH_LEAD_SECONDS;
+
+    if (!shouldRefresh) {
+      return;
+    }
+
+    this.lastRefreshAttemptAt = now;
+    await this.supabase.auth.refreshSession();
   }
 
   profile(user: User) {
