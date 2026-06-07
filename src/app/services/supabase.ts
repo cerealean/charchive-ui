@@ -15,6 +15,28 @@ export interface Profile {
   avatar_url: string | null;
 }
 
+export interface CardDetailRecord {
+  id: string;
+  owner_id: string;
+  title: string;
+  created_at: string;
+  current_version: {
+    character_name: string;
+    creator_name: string | null;
+    creator_notes: string | null;
+    source_format: string;
+  } | null;
+  avatar_file: {
+    storage_path: string;
+  } | null;
+  tags: Array<{
+    tag: {
+      name: string;
+      slug: string;
+    } | null;
+  }>;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -43,6 +65,40 @@ export class SupabaseService {
 
   profileUsername(user: User) {
     return this.supabase.from('profiles').select('username').eq('id', user.id).maybeSingle();
+  }
+
+  profileById(userId: string) {
+    return this.supabase.from('profiles').select('username').eq('id', userId).maybeSingle();
+  }
+
+  cardById(cardId: string) {
+    return this.supabase
+      .from('cards')
+      .select(
+        `
+          id,
+          owner_id,
+          title,
+          created_at,
+          current_version:card_versions!cards_current_version_id_fkey(
+            character_name,
+            creator_name,
+            creator_notes,
+            source_format
+          ),
+          avatar_file:card_files!cards_avatar_file_id_fkey(
+            storage_path
+          ),
+          tags:card_tags(
+            tag:tags(
+              name,
+              slug
+            )
+          )
+        `,
+      )
+      .eq('id', cardId)
+      .maybeSingle<CardDetailRecord>();
   }
 
   authChanges(callback: (event: AuthChangeEvent, session: Session | null) => void) {
@@ -111,5 +167,9 @@ export class SupabaseService {
 
   uploadAvatar(filePath: string, file: File) {
     return this.supabase.storage.from('profile-avatars').upload(filePath, file);
+  }
+
+  createCardFileSignedUrl(path: string, expiresInSeconds = 3600) {
+    return this.supabase.storage.from('card-files').createSignedUrl(path, expiresInSeconds);
   }
 }
