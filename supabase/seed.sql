@@ -25,11 +25,11 @@ values (
   'authenticated',
   'seed-owner-1@charchive.local',
   crypt('seed-password-unsafe', gen_salt('bf')),
-  '2026-06-07T00:13:31.139Z'::timestamptz,
+  '2026-06-07T00:46:22.074Z'::timestamptz,
   '{"provider":"email","providers":["email"]}'::jsonb,
   '{"display_name":"Seed Owner One","seeded":true}'::jsonb,
-  '2026-06-07T00:13:31.139Z'::timestamptz,
-  '2026-06-07T00:13:31.139Z'::timestamptz,
+  '2026-06-07T00:46:22.074Z'::timestamptz,
+  '2026-06-07T00:46:22.074Z'::timestamptz,
   false
 )
 on conflict (id) do nothing;
@@ -55,11 +55,11 @@ values (
   'authenticated',
   'seed-owner-2@charchive.local',
   crypt('seed-password-unsafe', gen_salt('bf')),
-  '2026-06-07T00:13:31.139Z'::timestamptz,
+  '2026-06-07T00:46:22.074Z'::timestamptz,
   '{"provider":"email","providers":["email"]}'::jsonb,
   '{"display_name":"Seed Owner Two","seeded":true}'::jsonb,
-  '2026-06-07T00:13:31.139Z'::timestamptz,
-  '2026-06-07T00:13:31.139Z'::timestamptz,
+  '2026-06-07T00:46:22.074Z'::timestamptz,
+  '2026-06-07T00:46:22.074Z'::timestamptz,
   false
 )
 on conflict (id) do nothing;

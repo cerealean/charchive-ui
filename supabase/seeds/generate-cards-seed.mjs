@@ -11,6 +11,8 @@ const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..', '..');
 const tempDir = path.join(repoRoot, 'temp');
 const outputSqlPath = path.join(repoRoot, 'supabase', 'seed.sql');
+const storageCardFilesDir = path.join(repoRoot, 'supabase', 'card-files');
+const storageCardFilesGeneratedDir = path.join(storageCardFilesDir, 'cards');
 
 const SEED_COUNT = 10;
 const FAKER_SEED = 20260606;
@@ -782,15 +784,45 @@ commit;
 `;
 }
 
+async function stageStorageObjects(files) {
+  await fs.rm(storageCardFilesGeneratedDir, { recursive: true, force: true });
+  await fs.mkdir(storageCardFilesDir, { recursive: true });
+  let staged = 0;
+
+  for (const file of files) {
+    if (!file.original_filename || !file.storage_path) {
+      continue;
+    }
+
+    const sourcePath = path.join(tempDir, file.original_filename);
+
+    try {
+      await fs.access(sourcePath);
+    } catch {
+      continue;
+    }
+
+    const targetPath = path.join(storageCardFilesDir, ...file.storage_path.split('/'));
+    await fs.mkdir(path.dirname(targetPath), { recursive: true });
+    await fs.copyFile(sourcePath, targetPath);
+    staged += 1;
+  }
+
+  return staged;
+}
+
 async function main() {
   const { templates, imageAssets } = await loadExampleAssets();
   const rows = buildSeedRows(templates, imageAssets);
   const sql = buildSeedSql(rows);
 
   await fs.writeFile(outputSqlPath, sql, 'utf8');
+  const stagedObjects = await stageStorageObjects(rows.files);
 
   // eslint-disable-next-line no-console
   console.log(`Generated ${SEED_COUNT} seeded cards to ${outputSqlPath}`);
+  // eslint-disable-next-line no-console
+  console.log(`Staged ${stagedObjects} storage object file(s) in ${storageCardFilesDir}`);
 }
 
 main().catch((error) => {
