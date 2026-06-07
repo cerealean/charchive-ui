@@ -93,7 +93,10 @@
 
       <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         @for (card of cards(); track card.id) {
-          <app-card-list-card [card]="card" (viewCard)="openCard($event)"></app-card-list-card>
+          <app-card-preview-card
+            [card]="card"
+            (viewCard)="openCard($event)"
+          ></app-card-preview-card>
         }
       </div>
     }

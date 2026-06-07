@@ -1,17 +1,17 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
-import { CardListViewModel } from '../../../interfaces/card-list-view-model.interface';
+import { CardListViewModel } from '../../interfaces/card-list-view-model.interface';
 
 @Component({
-  selector: 'app-card-list-card',
-  templateUrl: './card-list-card.html',
-  styleUrl: './card-list-card.css',
+  selector: 'app-card-preview-card',
+  templateUrl: './card-preview-card.html',
+  styleUrl: './card-preview-card.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block h-full',
   },
 })
-export class CardListCardComponent {
+export class CardPreviewCardComponent {
   readonly card = input.required<CardListViewModel>();
   readonly viewCard = output<string>();
 

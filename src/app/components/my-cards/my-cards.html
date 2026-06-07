@@ -49,30 +49,23 @@
       <div class="alert alert-error alert-soft" role="alert">
         <span>{{ errorMessage() }}</span>
       </div>
-    } @else if (cards().length === 0) {
-      <div class="alert alert-ghost border border-base-300" role="status">
-        <span>You have not uploaded any cards yet.</span>
-      </div>
     } @else {
-      <div class="grid gap-4">
-        @for (card of cards(); track card.id) {
-          <article class="card border border-base-300 bg-base-100 shadow-sm">
-            <div class="card-body gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div class="space-y-1">
-                <h2 class="text-xl font-semibold text-base-content">{{ card.title }}</h2>
-                <div class="flex flex-wrap items-center gap-2 text-sm text-base-content/70">
-                  <span class="badge badge-outline">{{ card.visibility }}</span>
-                  <span>Updated {{ card.updatedAt }}</span>
-                </div>
-              </div>
+      @if (cards().length === 0) {
+        <div class="alert alert-ghost border border-base-300" role="status">
+          <span>You have not uploaded any cards yet.</span>
+        </div>
+      }
 
-              <button type="button" class="btn btn-outline" (click)="viewCard(card.id)">
-                Open card
-              </button>
-            </div>
-          </article>
-        }
-      </div>
+      @if (cards().length > 0) {
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          @for (card of cards(); track card.id) {
+            <app-card-preview-card
+              [card]="card"
+              (viewCard)="viewCard($event)"
+            ></app-card-preview-card>
+          }
+        </div>
+      }
     }
   </div>
 </section>

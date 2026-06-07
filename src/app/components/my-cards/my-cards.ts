@@ -1,11 +1,13 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { CardListItem } from '../../interfaces/card-list-item.interface';
+import { CardPreviewCardComponent } from '../card-preview-card/card-preview-card';
+import { CardListViewModel } from '../../interfaces/card-list-view-model.interface';
 import { AuthService } from '../../services/auth';
 import { CardService } from '../../services/card';
 
 @Component({
   selector: 'app-my-cards',
+  imports: [CardPreviewCardComponent],
   templateUrl: './my-cards.html',
   styleUrl: './my-cards.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -16,7 +18,7 @@ export class MyCardsComponent implements OnInit {
   private readonly cardsService = inject(CardService);
   private readonly relativeTimeFormatter = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
 
-  protected readonly cards = signal<readonly CardListItem[]>([]);
+  protected readonly cards = signal<readonly CardListViewModel[]>([]);
   protected readonly loading = signal(false);
   protected readonly uploading = signal(false);
   protected readonly errorMessage = signal('');
@@ -89,9 +91,18 @@ export class MyCardsComponent implements OnInit {
 
       const cards = (data ?? []).map((card) => ({
         id: card.id,
-        title: card.title,
-        visibility: card.visibility,
-        updatedAt: this.formatRelativeTime(card.updated_at),
+        name: card.title,
+        tagline: `Visibility: ${this.formatVisibility(card.visibility)}`,
+        uploader: 'You',
+        createdAtIso: card.updated_at,
+        createdAgo: `Updated ${this.formatRelativeTime(card.updated_at)}`,
+        imageUrl: null,
+        tags: [
+          {
+            slug: card.visibility,
+            name: this.formatVisibility(card.visibility),
+          },
+        ],
       }));
 
       this.cards.set(cards);
@@ -140,5 +151,9 @@ export class MyCardsComponent implements OnInit {
     }
 
     return this.relativeTimeFormatter.format(years, 'year');
+  }
+
+  private formatVisibility(visibility: 'private' | 'unlisted' | 'public'): string {
+    return visibility.charAt(0).toUpperCase() + visibility.slice(1);
   }
 }

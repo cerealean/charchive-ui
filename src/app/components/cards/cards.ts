@@ -11,7 +11,7 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 
-import { CardListCardComponent } from './card-list-card/card-list-card';
+import { CardPreviewCardComponent } from '../card-preview-card/card-preview-card';
 import { CardListRecord } from '../../interfaces/card-list-record.interface';
 import { CardListViewModel } from '../../interfaces/card-list-view-model.interface';
 import { CardService } from '../../services/card';
@@ -24,7 +24,7 @@ const MAX_VISIBLE_PAGE_BUTTONS = 7;
 
 @Component({
   selector: 'app-cards',
-  imports: [CardListCardComponent],
+  imports: [CardPreviewCardComponent],
   templateUrl: './cards.html',
   styleUrl: './cards.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
