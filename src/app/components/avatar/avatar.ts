@@ -76,8 +76,8 @@ export class AvatarComponent {
         throw new Error('You must select an image to upload.');
       }
 
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${Math.random()}.${fileExt}`;
+      const fileExt = this.resolveFileExtension(file);
+      const filePath = `${crypto.randomUUID()}.${fileExt}`;
 
       await this.supabase.uploadAvatar(filePath, file);
       this.upload.emit(filePath);
@@ -100,5 +100,24 @@ export class AvatarComponent {
       URL.revokeObjectURL(this.avatarObjectUrl);
       this.avatarObjectUrl = null;
     }
+  }
+
+  private resolveFileExtension(file: File): string {
+    const extensionFromName = file.name.split('.').pop()?.toLowerCase();
+
+    if (extensionFromName && /^[a-z0-9]+$/.test(extensionFromName)) {
+      return extensionFromName;
+    }
+
+    const extensionByMimeType: Record<string, string> = {
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/webp': 'webp',
+      'image/gif': 'gif',
+      'image/svg+xml': 'svg',
+      'image/avif': 'avif',
+    };
+
+    return extensionByMimeType[file.type] ?? 'bin';
   }
 }
