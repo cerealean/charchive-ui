@@ -37,6 +37,26 @@ export interface CardDetailRecord {
   }>;
 }
 
+export interface CardListRecord {
+  id: string;
+  owner_id: string;
+  title: string;
+  tagline: string | null;
+  created_at: string;
+  current_version: {
+    character_name: string;
+  } | null;
+  avatar_file: {
+    storage_path: string;
+  } | null;
+  tags: Array<{
+    tag: {
+      name: string;
+      slug: string;
+    } | null;
+  }>;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -99,6 +119,39 @@ export class SupabaseService {
       )
       .eq('id', cardId)
       .maybeSingle<CardDetailRecord>();
+  }
+
+  publicCards(limit = 40) {
+    return this.supabase
+      .from('cards')
+      .select(
+        `
+          id,
+          owner_id,
+          title,
+          tagline,
+          created_at,
+          current_version:card_versions!cards_current_version_id_fkey(
+            character_name
+          ),
+          avatar_file:card_files!cards_avatar_file_id_fkey(
+            storage_path
+          ),
+          tags:card_tags(
+            tag:tags(
+              name,
+              slug
+            )
+          )
+        `,
+      )
+      .order('created_at', { ascending: false })
+      .limit(limit)
+      .returns<CardListRecord[]>();
+  }
+
+  profilesByIds(userIds: readonly string[]) {
+    return this.supabase.from('profiles').select('id, username').in('id', userIds);
   }
 
   authChanges(callback: (event: AuthChangeEvent, session: Session | null) => void) {

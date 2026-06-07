@@ -40,6 +40,10 @@ export const routes: Routes = [
         ],
       },
       {
+        path: 'cards',
+        loadComponent: () => import('./components/cards/cards').then((m) => m.CardsComponent),
+      },
+      {
         path: 'cards/:id',
         loadComponent: () =>
           import('./components/card-detail/card-detail').then((m) => m.CardDetailComponent),
