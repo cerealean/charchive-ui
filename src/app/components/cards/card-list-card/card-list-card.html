@@ -1,0 +1,46 @@
+<article class="card card-side h-full border border-base-300 bg-base-100 shadow-sm">
+  <figure class="w-28 shrink-0 overflow-hidden bg-base-200 sm:w-32">
+    @if (card().imageUrl) {
+      <img
+        [src]="card().imageUrl"
+        alt="Card image for {{ card().name }}"
+        class="h-full w-full object-cover"
+      />
+    } @else {
+      <div
+        class="grid h-full min-h-44 w-full place-items-center px-3 text-center text-xs font-semibold uppercase tracking-wide text-base-content/55"
+      >
+        No image
+      </div>
+    }
+  </figure>
+
+  <div class="card-body gap-3 p-4">
+    <div class="space-y-1">
+      <h2 class="line-clamp-2 text-lg font-bold leading-6 text-base-content">
+        {{ card().name }}
+      </h2>
+      <p class="line-clamp-2 text-sm text-base-content/70">{{ card().tagline }}</p>
+    </div>
+
+    <div class="flex flex-wrap gap-1.5">
+      @if (card().tags.length > 0) {
+        @for (tag of card().tags.slice(0, 4); track tag.slug) {
+          <span class="badge badge-outline badge-sm">{{ tag.name }}</span>
+        }
+      } @else {
+        <span class="badge badge-ghost badge-sm">Untagged</span>
+      }
+    </div>
+
+    <div class="mt-auto space-y-2 pt-1">
+      <p class="text-xs text-base-content/70">
+        Uploaded by <span class="font-semibold">{{ card().uploader }}</span>
+      </p>
+      <p class="text-xs text-base-content/60">{{ card().createdAgo }}</p>
+      <button type="button" class="btn btn-outline btn-sm w-full" (click)="onViewCard()">
+        View card
+      </button>
+    </div>
+  </div>
+</article>

@@ -11,6 +11,7 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 
+import { CardListCardComponent } from './card-list-card/card-list-card';
 import { CardListRecord } from '../../interfaces/card-list-record.interface';
 import { CardListViewModel } from '../../interfaces/card-list-view-model.interface';
 import { SupabaseService } from '../../services/supabase';
@@ -22,6 +23,7 @@ const MAX_VISIBLE_PAGE_BUTTONS = 7;
 
 @Component({
   selector: 'app-cards',
+  imports: [CardListCardComponent],
   templateUrl: './cards.html',
   styleUrl: './cards.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
