@@ -1,10 +1,24 @@
 import { TestBed } from '@angular/core/testing';
 import { App } from './app';
+import { SupabaseService } from './services/supabase';
 
 describe('App', () => {
   beforeEach(async () => {
+    const supabaseServiceMock = {
+      getUser: async () => null,
+      authChanges: () => ({
+        data: {
+          subscription: {
+            unsubscribe: () => {},
+          },
+        },
+      }),
+      userHasUsername: async () => false,
+    } as unknown as SupabaseService;
+
     await TestBed.configureTestingModule({
       imports: [App],
+      providers: [{ provide: SupabaseService, useValue: supabaseServiceMock }],
     }).compileComponents();
   });
 
@@ -14,10 +28,14 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should render title', async () => {
+  it('renders the app shell header and router outlet', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
+    fixture.detectChanges();
+
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, charchive-ui');
+
+    expect(compiled.querySelector('header')?.textContent).toContain('Charchive');
+    expect(compiled.querySelector('router-outlet')).toBeTruthy();
   });
 });
