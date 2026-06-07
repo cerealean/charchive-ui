@@ -62,15 +62,22 @@ describe('AccountComponent', () => {
   });
 
   it('marks the current username as available after profile load', async () => {
-    component.usernameControl.setValue('Demo User Updated');
-    component.usernameControl.markAsDirty();
-    component.usernameControl.markAsTouched();
-    component.usernameControl.updateValueAndValidity();
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    await fixture.whenStable();
-    fixture.detectChanges();
+    vi.useFakeTimers();
 
-    expect(component['showUsernameAvailabilityFeedback']()).toBe(true);
-    expect(component['usernameStatus']()).toBe('available');
+    try {
+      component.usernameControl.setValue('Demo User Updated');
+      component.usernameControl.markAsDirty();
+      component.usernameControl.markAsTouched();
+      component.usernameControl.updateValueAndValidity();
+
+      await vi.advanceTimersByTimeAsync(300);
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(component['showUsernameAvailabilityFeedback']()).toBe(true);
+      expect(component['usernameStatus']()).toBe('available');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
