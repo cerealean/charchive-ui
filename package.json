@@ -9,7 +9,7 @@
     "test": "ng test",
     "serve:ssr:charchive-ui": "node dist/charchive-ui/server/server.mjs",
     "seed:cards:generate": "node ./supabase/seeds/generate-cards-seed.mjs",
-    "seed:cards:refresh": "npm run seed:cards:generate && supabase db reset"
+    "seed:cards:refresh": "npm run seed:cards:generate && supabase db reset --local"
   },
   "private": true,
   "packageManager": "npm@11.13.0",
