@@ -18,6 +18,7 @@ import { SupabaseService } from '../../services/supabase';
 })
 export class AvatarComponent {
   _avatarUrl: SafeResourceUrl | undefined;
+  private avatarObjectUrl: string | null = null;
   uploading = false;
   errorMessage = '';
   readonly fileInputId = `avatar-upload-${Math.random().toString(36).slice(2, 10)}`;
@@ -29,6 +30,7 @@ export class AvatarComponent {
       return;
     }
 
+    this.revokeAvatarObjectUrl();
     this._avatarUrl = undefined;
     this.detectChangesSafely();
   }
@@ -40,13 +42,19 @@ export class AvatarComponent {
     private readonly dom: DomSanitizer,
     private readonly cdr: ChangeDetectorRef,
     private readonly destroyRef: DestroyRef,
-  ) {}
+  ) {
+    this.destroyRef.onDestroy(() => {
+      this.revokeAvatarObjectUrl();
+    });
+  }
 
   async downloadImage(path: string) {
     try {
       const { data } = await this.supabase.downLoadImage(path);
       if (data instanceof Blob) {
-        this._avatarUrl = this.dom.bypassSecurityTrustResourceUrl(URL.createObjectURL(data));
+        this.revokeAvatarObjectUrl();
+        this.avatarObjectUrl = URL.createObjectURL(data);
+        this._avatarUrl = this.dom.bypassSecurityTrustResourceUrl(this.avatarObjectUrl);
         this.detectChangesSafely();
       }
     } catch (error) {
@@ -84,6 +92,13 @@ export class AvatarComponent {
   private detectChangesSafely(): void {
     if (!this.destroyRef.destroyed) {
       this.cdr.detectChanges();
+    }
+  }
+
+  private revokeAvatarObjectUrl(): void {
+    if (this.avatarObjectUrl) {
+      URL.revokeObjectURL(this.avatarObjectUrl);
+      this.avatarObjectUrl = null;
     }
   }
 }
