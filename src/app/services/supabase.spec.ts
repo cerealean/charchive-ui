@@ -4,6 +4,40 @@ import { Mock, vi } from 'vitest';
 
 import { SupabaseService } from './supabase';
 
+const {
+  createClientMock,
+  fromMock,
+  queryBuilder,
+} = vi.hoisted(() => {
+  const queryBuilder = {
+    select: vi.fn(),
+    eq: vi.fn(),
+    order: vi.fn(),
+    limit: vi.fn(),
+    returns: vi.fn(),
+  };
+
+  const fromMock = vi.fn();
+  const createClientMock = vi.fn();
+
+  return {
+    createClientMock,
+    fromMock,
+    queryBuilder,
+  };
+});
+
+vi.mock('@supabase/supabase-js', async () => {
+  const actual = await vi.importActual<typeof import('@supabase/supabase-js')>(
+    '@supabase/supabase-js',
+  );
+
+  return {
+    ...actual,
+    createClient: createClientMock,
+  };
+});
+
 describe('SupabaseService', () => {
   let service: SupabaseService;
   let fromSpy: Mock;
@@ -14,13 +48,7 @@ describe('SupabaseService', () => {
   let returnsSpy: Mock;
 
   beforeEach(() => {
-    const queryBuilder = {
-      select: vi.fn(),
-      eq: vi.fn(),
-      order: vi.fn(),
-      limit: vi.fn(),
-      returns: vi.fn(),
-    };
+    vi.clearAllMocks();
 
     queryBuilder.select.mockReturnValue(queryBuilder);
     queryBuilder.eq.mockReturnValue(queryBuilder);
@@ -29,13 +57,13 @@ describe('SupabaseService', () => {
     queryBuilder.returns.mockReturnValue({ data: [], error: null });
 
     const mockClient = {
-      from: vi.fn().mockReturnValue(queryBuilder),
+      from: fromMock.mockReturnValue(queryBuilder),
       auth: {},
       storage: {},
     };
 
-    vi.spyOn(supabaseJs, 'createClient').mockReturnValue(
-      mockClient as unknown as supabaseJs.SupabaseClient,
+    createClientMock.mockReturnValue(
+      mockClient as unknown as ReturnType<typeof supabaseJs.createClient>,
     );
 
     fromSpy = mockClient.from;
