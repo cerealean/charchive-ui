@@ -295,6 +295,14 @@ export class CardService {
       return this.parseJsonUpload(file);
     }
 
+    if (this.isPngFile(file)) {
+      const pngPayload = await this.parsePngUpload(file);
+
+      if (pngPayload) {
+        return pngPayload;
+      }
+    }
+
     if (file.type.startsWith('image/')) {
       return this.parseImageUpload(file);
     }
@@ -317,11 +325,32 @@ export class CardService {
       throw new Error('The selected JSON file must contain a JSON object at the root.');
     }
 
+    return this.buildParsedPayloadFromRecord(payloadRecord, this.fileBaseName(file.name));
+  }
+
+  private async parsePngUpload(file: File): Promise<ParsedUploadPayload | null> {
+    const payloadRecords = await this.extractPngCharacterPayloads(file);
+
+    if (payloadRecords.length === 0) {
+      return null;
+    }
+
+    const preferredPayload =
+      payloadRecords.find((record) => this.detectSourceFormat(record) === 'chara_card_v2') ??
+      payloadRecords[0];
+
+    return this.buildParsedPayloadFromRecord(preferredPayload, this.fileBaseName(file.name));
+  }
+
+  private buildParsedPayloadFromRecord(
+    payloadRecord: Record<string, unknown>,
+    fallbackCharacterName: string,
+  ): ParsedUploadPayload {
     const dataRecord = this.asRecord(payloadRecord['data']);
     const characterName =
       this.readTrimmedString(dataRecord?.['name']) ??
       this.readTrimmedString(payloadRecord['character_name']) ??
-      this.fileBaseName(file.name);
+      fallbackCharacterName;
 
     const title = characterName;
     const creatorNotes =
@@ -345,6 +374,254 @@ export class CardService {
       rawJson: payloadRecord,
       canonicalJson: this.buildCanonicalJson(payloadRecord, characterName, creatorNotes, sourceApp),
     };
+  }
+
+  private async extractPngCharacterPayloads(file: File): Promise<Record<string, unknown>[]> {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+
+    if (!this.hasPngSignature(bytes)) {
+      return [];
+    }
+
+    const payloads: Record<string, unknown>[] = [];
+    let offset = 8;
+
+    while (offset + 12 <= bytes.length) {
+      const length = this.readUint32BigEndian(bytes, offset);
+      const type = this.readAscii(bytes, offset + 4, 4);
+      const dataStart = offset + 8;
+      const dataEnd = dataStart + length;
+
+      if (dataEnd + 4 > bytes.length) {
+        break;
+      }
+
+      if (type === 'tEXt' || type === 'iTXt' || type === 'zTXt') {
+        const textEntries = await this.extractPngTextEntries(
+          type,
+          bytes.subarray(dataStart, dataEnd),
+        );
+
+        for (const entry of textEntries) {
+          if (entry.keyword.toLowerCase() !== 'chara') {
+            continue;
+          }
+
+          const decodedPayload = this.decodeEmbeddedCardPayload(entry.value);
+
+          if (decodedPayload) {
+            payloads.push(decodedPayload);
+          }
+        }
+      }
+
+      offset = dataEnd + 4;
+
+      if (type === 'IEND') {
+        break;
+      }
+    }
+
+    return payloads;
+  }
+
+  private hasPngSignature(bytes: Uint8Array): boolean {
+    const expected = [137, 80, 78, 71, 13, 10, 26, 10];
+
+    if (bytes.length < expected.length) {
+      return false;
+    }
+
+    return expected.every((value, index) => bytes[index] === value);
+  }
+
+  private readUint32BigEndian(bytes: Uint8Array, offset: number): number {
+    return (
+      ((bytes[offset] << 24) |
+        (bytes[offset + 1] << 16) |
+        (bytes[offset + 2] << 8) |
+        bytes[offset + 3]) >>>
+      0
+    );
+  }
+
+  private readAscii(bytes: Uint8Array, start: number, length: number): string {
+    let output = '';
+
+    for (let index = 0; index < length; index += 1) {
+      output += String.fromCharCode(bytes[start + index]);
+    }
+
+    return output;
+  }
+
+  private async extractPngTextEntries(
+    chunkType: 'tEXt' | 'iTXt' | 'zTXt',
+    chunkData: Uint8Array,
+  ): Promise<Array<{ keyword: string; value: string }>> {
+    if (chunkType === 'tEXt') {
+      const separator = chunkData.indexOf(0);
+
+      if (separator <= 0) {
+        return [];
+      }
+
+      return [
+        {
+          keyword: this.decodeLatin1(chunkData.subarray(0, separator)),
+          value: this.decodeLatin1(chunkData.subarray(separator + 1)),
+        },
+      ];
+    }
+
+    if (chunkType === 'zTXt') {
+      const separator = chunkData.indexOf(0);
+
+      if (separator <= 0 || separator + 2 > chunkData.length) {
+        return [];
+      }
+
+      const keyword = this.decodeLatin1(chunkData.subarray(0, separator));
+      const compressionMethod = chunkData[separator + 1];
+
+      if (compressionMethod !== 0) {
+        return [];
+      }
+
+      const compressed = chunkData.subarray(separator + 2);
+      const value = await this.inflateToUtf8(compressed);
+
+      if (value === null) {
+        return [];
+      }
+
+      return [{ keyword, value }];
+    }
+
+    let cursor = chunkData.indexOf(0);
+
+    if (cursor <= 0 || cursor + 5 > chunkData.length) {
+      return [];
+    }
+
+    const keyword = this.decodeLatin1(chunkData.subarray(0, cursor));
+    const compressionFlag = chunkData[cursor + 1];
+    const compressionMethod = chunkData[cursor + 2];
+    cursor += 3;
+
+    const languageEnd = chunkData.indexOf(0, cursor);
+
+    if (languageEnd < 0) {
+      return [];
+    }
+
+    cursor = languageEnd + 1;
+
+    const translatedEnd = chunkData.indexOf(0, cursor);
+
+    if (translatedEnd < 0) {
+      return [];
+    }
+
+    cursor = translatedEnd + 1;
+    const remaining = chunkData.subarray(cursor);
+
+    if (compressionFlag === 0) {
+      return [{ keyword, value: this.decodeUtf8(remaining) }];
+    }
+
+    if (compressionFlag === 1 && compressionMethod === 0) {
+      const value = await this.inflateToUtf8(remaining);
+
+      if (value !== null) {
+        return [{ keyword, value }];
+      }
+    }
+
+    return [];
+  }
+
+  private decodeEmbeddedCardPayload(value: string): Record<string, unknown> | null {
+    const candidates = [value.trim()];
+    const base64Decoded = this.decodeBase64Utf8(value.trim());
+
+    if (base64Decoded) {
+      candidates.push(base64Decoded);
+    }
+
+    for (const candidate of candidates) {
+      if (!candidate) {
+        continue;
+      }
+
+      try {
+        const parsed = JSON.parse(candidate) as unknown;
+        const asObject = this.asRecord(parsed);
+
+        if (asObject) {
+          return asObject;
+        }
+      } catch {
+        continue;
+      }
+    }
+
+    return null;
+  }
+
+  private decodeBase64Utf8(value: string): string | null {
+    const normalized = value.replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/');
+
+    if (!normalized) {
+      return null;
+    }
+
+    const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), '=');
+
+    try {
+      const binary = atob(padded);
+      const bytes = new Uint8Array(binary.length);
+
+      for (let index = 0; index < binary.length; index += 1) {
+        bytes[index] = binary.charCodeAt(index);
+      }
+
+      return this.decodeUtf8(bytes);
+    } catch {
+      return null;
+    }
+  }
+
+  private decodeLatin1(bytes: Uint8Array): string {
+    let output = '';
+
+    for (const value of bytes) {
+      output += String.fromCharCode(value);
+    }
+
+    return output;
+  }
+
+  private decodeUtf8(bytes: Uint8Array): string {
+    return new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+  }
+
+  private async inflateToUtf8(compressedBytes: Uint8Array): Promise<string | null> {
+    if (typeof DecompressionStream === 'undefined') {
+      return null;
+    }
+
+    try {
+      const copied = new Uint8Array(compressedBytes.byteLength);
+      copied.set(compressedBytes);
+      const stream = new Blob([copied.buffer])
+        .stream()
+        .pipeThrough(new DecompressionStream('deflate'));
+      const decompressedBuffer = await new Response(stream).arrayBuffer();
+      return this.decodeUtf8(new Uint8Array(decompressedBuffer));
+    } catch {
+      return null;
+    }
   }
 
   private parseImageUpload(file: File): ParsedUploadPayload {
@@ -497,6 +774,14 @@ export class CardService {
     }
 
     return file.name.toLowerCase().endsWith('.json');
+  }
+
+  private isPngFile(file: File): boolean {
+    if (file.type === 'image/png') {
+      return true;
+    }
+
+    return file.name.toLowerCase().endsWith('.png');
   }
 
   private getFileExtension(file: File): string {
