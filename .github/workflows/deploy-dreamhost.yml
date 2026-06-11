@@ -52,65 +52,32 @@ jobs:
       - name: Validate deployment configuration
         env:
           DREAMHOST_SFTP_PASSWORD: ${{ secrets.DREAMHOST_SFTP_PASSWORD }}
-          DREAMHOST_SFTP_KNOWN_HOSTS: ${{ secrets.DREAMHOST_SFTP_KNOWN_HOSTS }}
         run: |
           test -n "$DREAMHOST_SFTP_PASSWORD" || { echo "Error: DREAMHOST_SFTP_PASSWORD is not set"; exit 1; }
-          test -n "$DREAMHOST_SFTP_KNOWN_HOSTS" || { echo "Error: DREAMHOST_SFTP_KNOWN_HOSTS is not set"; exit 1; }
           test -n "$DREAMHOST_SFTP_HOST" || { echo "Error: DREAMHOST_SFTP_HOST is not set"; exit 1; }
           test -n "$DREAMHOST_SFTP_USER" || { echo "Error: DREAMHOST_SFTP_USER is not set"; exit 1; }
           test -n "$DREAMHOST_DEPLOY_PATH" || { echo "Error: DREAMHOST_DEPLOY_PATH is not set"; exit 1; }
           test -f "./build/index.html" || { echo "Error: build artifact is missing index.html"; exit 1; }
 
-      - name: Install SFTP client
-        run: sudo apt-get update && sudo apt-get install -y lftp
-
-      - name: Set up known hosts
-        env:
-          DREAMHOST_SFTP_KNOWN_HOSTS: ${{ secrets.DREAMHOST_SFTP_KNOWN_HOSTS }}
-        run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          printf '%s\n' "$DREAMHOST_SFTP_KNOWN_HOSTS" > ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
+      - name: Dry-run SFTP deployment
+        uses: Dylan700/sftp-upload-action@v1.2.3
+        with:
+          server: ${{ vars.DREAMHOST_SFTP_HOST }}
+          username: ${{ vars.DREAMHOST_SFTP_USER }}
+          password: ${{ secrets.DREAMHOST_SFTP_PASSWORD }}
+          port: ${{ vars.DREAMHOST_SFTP_PORT }}
+          uploads: |
+            ./build/ => ${{ vars.DREAMHOST_DEPLOY_PATH }}/
+          delete: true
+          dry-run: true
 
       - name: Deploy via SFTP
-        env:
-          DREAMHOST_SFTP_PASSWORD: ${{ secrets.DREAMHOST_SFTP_PASSWORD }}
-        run: |
-          set -euo pipefail
-          umask 077
-          LFTP_CONNECT='set sftp:connect-program "ssh -a -x -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts"'
-          SFTP_PORT="${DREAMHOST_SFTP_PORT:-22}"
-          execute_lftp_deployment() {
-            local dry_run_flag="$1"
-            lftp <<EOF
-          set cmd:fail-exit true
-          $LFTP_CONNECT
-          open sftp://$DREAMHOST_SFTP_HOST:$SFTP_PORT
-          user "$DREAMHOST_SFTP_USER" "$DREAMHOST_SFTP_PASSWORD"
-          # Keep remote target in sync with build output by removing stale files.
-          mirror --reverse --verbose --delete $dry_run_flag ./build "$DREAMHOST_DEPLOY_PATH"
-          bye
-          EOF
-          }
-
-          echo "Running deployment dry-run over SFTP..."
-          execute_lftp_deployment "--dry-run" || {
-            echo "Error: dry-run deployment failed"
-            exit 1
-          }
-          {
-            echo "### Deployment dry-run"
-            echo "Dry-run completed successfully."
-          } >> "$GITHUB_STEP_SUMMARY"
-          echo "Applying deployment..."
-          execute_lftp_deployment "" || { echo "Error: deployment failed"; exit 1; }
-          {
-            echo "### Deployment result"
-            echo "Deployment completed successfully."
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Clean up host verification data
-        if: always()
-        run: |
-          rm -f ~/.ssh/known_hosts
+        uses: Dylan700/sftp-upload-action@v1.2.3
+        with:
+          server: ${{ vars.DREAMHOST_SFTP_HOST }}
+          username: ${{ vars.DREAMHOST_SFTP_USER }}
+          password: ${{ secrets.DREAMHOST_SFTP_PASSWORD }}
+          port: ${{ vars.DREAMHOST_SFTP_PORT }}
+          uploads: |
+            ./build/ => ${{ vars.DREAMHOST_DEPLOY_PATH }}/
+          delete: true
