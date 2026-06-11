@@ -54,6 +54,8 @@ jobs:
           DREAMHOST_SSH_PRIVATE_KEY: ${{ secrets.DREAMHOST_SSH_PRIVATE_KEY }}
           DREAMHOST_KNOWN_HOSTS: ${{ secrets.DREAMHOST_KNOWN_HOSTS }}
         run: |
+          test -n "$DREAMHOST_SSH_PRIVATE_KEY" || { echo "Error: DREAMHOST_SSH_PRIVATE_KEY is not set"; exit 1; }
+          test -n "$DREAMHOST_KNOWN_HOSTS" || { echo "Error: DREAMHOST_KNOWN_HOSTS is not set"; exit 1; }
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
           printf '%s\n' "$DREAMHOST_SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
@@ -61,7 +63,7 @@ jobs:
           printf '%s\n' "$DREAMHOST_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-      - name: Deploy via rsync over SSH
+      - name: Dry-run deploy via rsync over SSH
         run: |
           test -n "$DREAMHOST_SSH_HOST" || { echo "Error: DREAMHOST_SSH_HOST is not set"; exit 1; }
           test -n "$DREAMHOST_SSH_USER" || { echo "Error: DREAMHOST_SSH_USER is not set"; exit 1; }
@@ -71,7 +73,15 @@ jobs:
           else
             SSH_PORT="$DREAMHOST_SSH_PORT"
           fi
-          rsync -az \
+          rsync -az --dry-run --delete-after \
+            -e "ssh -i ~/.ssh/id_ed25519 -p $SSH_PORT -o StrictHostKeyChecking=yes" \
+            ./build/ \
+            "$DREAMHOST_SSH_USER@$DREAMHOST_SSH_HOST:$DREAMHOST_DEPLOY_PATH"
+
+      - name: Deploy via rsync over SSH
+        run: |
+          SSH_PORT="${DREAMHOST_SSH_PORT:-22}"
+          rsync -az --delete-after \
             -e "ssh -i ~/.ssh/id_ed25519 -p $SSH_PORT -o StrictHostKeyChecking=yes" \
             ./build/ \
             "$DREAMHOST_SSH_USER@$DREAMHOST_SSH_HOST:$DREAMHOST_DEPLOY_PATH"
