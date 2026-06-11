@@ -74,19 +74,12 @@ jobs:
           printf '%s\n' "$DREAMHOST_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-      - name: Dry-run deploy via rsync over SSH
-        run: |
-          rsync -az --dry-run --delete-after \
-            -e "ssh -i ~/.ssh/id_ed25519 -p $SSH_PORT -o StrictHostKeyChecking=yes" \
-            ./build/ \
-            "$DREAMHOST_SSH_USER@$DREAMHOST_SSH_HOST:$DREAMHOST_DEPLOY_PATH"
-
       - name: Deploy via rsync over SSH
         run: |
-          rsync -az --delete-after \
-            -e "ssh -i ~/.ssh/id_ed25519 -p $SSH_PORT -o StrictHostKeyChecking=yes" \
-            ./build/ \
-            "$DREAMHOST_SSH_USER@$DREAMHOST_SSH_HOST:$DREAMHOST_DEPLOY_PATH"
+          RSYNC_TARGET="$DREAMHOST_SSH_USER@$DREAMHOST_SSH_HOST:$DREAMHOST_DEPLOY_PATH"
+          RSYNC_SSH_OPTS="ssh -i ~/.ssh/id_ed25519 -p $SSH_PORT -o StrictHostKeyChecking=yes"
+          rsync -az --dry-run --delete-after -e "$RSYNC_SSH_OPTS" ./build/ "$RSYNC_TARGET"
+          rsync -az --delete-after -e "$RSYNC_SSH_OPTS" ./build/ "$RSYNC_TARGET"
 
       - name: Clean up SSH material
         if: always()
