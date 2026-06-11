@@ -91,6 +91,7 @@ jobs:
           $LFTP_CONNECT
           open sftp://$DREAMHOST_SFTP_HOST:$SFTP_PORT
           user "$DREAMHOST_SFTP_USER" "$DREAMHOST_SFTP_PASSWORD"
+          # Keep remote target in sync with build output by removing stale files.
           mirror --reverse --verbose --delete $dry_run_flag ./build "$DREAMHOST_DEPLOY_PATH"
           bye
           EOF
@@ -109,6 +110,12 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
           echo "Applying deployment..."
           execute_lftp_deployment "" > "$DEPLOY_LOG_FILE" 2>&1 || { echo "Error: deployment failed"; cat "$DEPLOY_LOG_FILE"; exit 1; }
+          {
+            echo "### Deployment result"
+            echo '```'
+            cat "$DEPLOY_LOG_FILE"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Clean up host verification data
         if: always()
