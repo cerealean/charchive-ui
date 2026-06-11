@@ -38,9 +38,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     env:
-      DREAMHOST_SSH_HOST: ${{ vars.DREAMHOST_SSH_HOST }}
-      DREAMHOST_SSH_PORT: ${{ vars.DREAMHOST_SSH_PORT }}
-      DREAMHOST_SSH_USER: ${{ vars.DREAMHOST_SSH_USER }}
+      DREAMHOST_SFTP_HOST: ${{ vars.DREAMHOST_SFTP_HOST }}
+      DREAMHOST_SFTP_PORT: ${{ vars.DREAMHOST_SFTP_PORT }}
+      DREAMHOST_SFTP_USER: ${{ vars.DREAMHOST_SFTP_USER }}
       DREAMHOST_DEPLOY_PATH: ${{ vars.DREAMHOST_DEPLOY_PATH }}
     steps:
       - name: Download build output
@@ -51,46 +51,50 @@ jobs:
 
       - name: Validate deployment configuration
         env:
-          DREAMHOST_SSH_PRIVATE_KEY: ${{ secrets.DREAMHOST_SSH_PRIVATE_KEY }}
-          DREAMHOST_KNOWN_HOSTS: ${{ secrets.DREAMHOST_KNOWN_HOSTS }}
+          DREAMHOST_SFTP_PASSWORD: ${{ secrets.DREAMHOST_SFTP_PASSWORD }}
+          DREAMHOST_SFTP_KNOWN_HOSTS: ${{ secrets.DREAMHOST_SFTP_KNOWN_HOSTS }}
         run: |
-          test -n "$DREAMHOST_SSH_PRIVATE_KEY" || { echo "Error: DREAMHOST_SSH_PRIVATE_KEY is not set"; exit 1; }
-          test -n "$DREAMHOST_KNOWN_HOSTS" || { echo "Error: DREAMHOST_KNOWN_HOSTS is not set"; exit 1; }
-          test -n "$DREAMHOST_SSH_HOST" || { echo "Error: DREAMHOST_SSH_HOST is not set"; exit 1; }
-          test -n "$DREAMHOST_SSH_USER" || { echo "Error: DREAMHOST_SSH_USER is not set"; exit 1; }
+          test -n "$DREAMHOST_SFTP_PASSWORD" || { echo "Error: DREAMHOST_SFTP_PASSWORD is not set"; exit 1; }
+          test -n "$DREAMHOST_SFTP_KNOWN_HOSTS" || { echo "Error: DREAMHOST_SFTP_KNOWN_HOSTS is not set"; exit 1; }
+          test -n "$DREAMHOST_SFTP_HOST" || { echo "Error: DREAMHOST_SFTP_HOST is not set"; exit 1; }
+          test -n "$DREAMHOST_SFTP_USER" || { echo "Error: DREAMHOST_SFTP_USER is not set"; exit 1; }
           test -n "$DREAMHOST_DEPLOY_PATH" || { echo "Error: DREAMHOST_DEPLOY_PATH is not set"; exit 1; }
           test -f "./build/index.html" || { echo "Error: build artifact is missing index.html"; exit 1; }
-          echo "SSH_PORT=${DREAMHOST_SSH_PORT:-22}" >> "$GITHUB_ENV"
+          echo "SFTP_PORT=${DREAMHOST_SFTP_PORT:-22}" >> "$GITHUB_ENV"
 
-      - name: Set up SSH key
+      - name: Install SFTP client
+        run: sudo apt-get update && sudo apt-get install -y lftp
+
+      - name: Set up known hosts
         env:
-          DREAMHOST_SSH_PRIVATE_KEY: ${{ secrets.DREAMHOST_SSH_PRIVATE_KEY }}
-          DREAMHOST_KNOWN_HOSTS: ${{ secrets.DREAMHOST_KNOWN_HOSTS }}
+          DREAMHOST_SFTP_KNOWN_HOSTS: ${{ secrets.DREAMHOST_SFTP_KNOWN_HOSTS }}
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          printf '%s\n' "$DREAMHOST_SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          printf '%s\n' "$DREAMHOST_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          printf '%s\n' "$DREAMHOST_SFTP_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-      - name: Deploy via rsync over SSH
+      - name: Deploy via SFTP
+        env:
+          DREAMHOST_SFTP_PASSWORD: ${{ secrets.DREAMHOST_SFTP_PASSWORD }}
         run: |
           set -euo pipefail
-          RSYNC_TARGET="$DREAMHOST_SSH_USER@$DREAMHOST_SSH_HOST:$DREAMHOST_DEPLOY_PATH"
-          RSYNC_SSH_OPTS="ssh -i ~/.ssh/id_ed25519 -p $SSH_PORT -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts"
-          echo "Running deployment dry-run..."
-          rsync -az --dry-run --delete-after -e "$RSYNC_SSH_OPTS" ./build/ "$RSYNC_TARGET" | tee /tmp/rsync-dry-run.log || { echo "Error: dry-run deployment failed"; exit 1; }
+          LFTP_CONNECT='set sftp:connect-program "ssh -a -x -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts"'
+          LFTP_OPEN="open -u \"$DREAMHOST_SFTP_USER\",\"$DREAMHOST_SFTP_PASSWORD\" sftp://$DREAMHOST_SFTP_HOST:$SFTP_PORT"
+          echo "Running deployment dry-run over SFTP..."
+          lftp -e "set cmd:fail-exit true; $LFTP_CONNECT; $LFTP_OPEN; mirror --reverse --verbose --delete --dry-run ./build \"$DREAMHOST_DEPLOY_PATH\"; bye" \
+            | tee /tmp/sftp-dry-run.log || { echo "Error: dry-run deployment failed"; exit 1; }
           {
             echo "### Deployment dry-run"
             echo '```'
-            cat /tmp/rsync-dry-run.log
+            cat /tmp/sftp-dry-run.log
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
           echo "Applying deployment..."
-          rsync -az --delete-after -e "$RSYNC_SSH_OPTS" ./build/ "$RSYNC_TARGET" || { echo "Error: deployment failed"; exit 1; }
+          lftp -e "set cmd:fail-exit true; $LFTP_CONNECT; $LFTP_OPEN; mirror --reverse --verbose --delete ./build \"$DREAMHOST_DEPLOY_PATH\"; bye" \
+            || { echo "Error: deployment failed"; exit 1; }
 
-      - name: Clean up SSH material
+      - name: Clean up host verification data
         if: always()
         run: |
-          rm -f ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+          rm -f ~/.ssh/known_hosts
