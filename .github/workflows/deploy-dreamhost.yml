@@ -60,7 +60,6 @@ jobs:
           test -n "$DREAMHOST_SFTP_USER" || { echo "Error: DREAMHOST_SFTP_USER is not set"; exit 1; }
           test -n "$DREAMHOST_DEPLOY_PATH" || { echo "Error: DREAMHOST_DEPLOY_PATH is not set"; exit 1; }
           test -f "./build/index.html" || { echo "Error: build artifact is missing index.html"; exit 1; }
-          echo "SFTP_PORT=${DREAMHOST_SFTP_PORT:-22}" >> "$GITHUB_ENV"
 
       - name: Install SFTP client
         run: sudo apt-get update && sudo apt-get install -y lftp
@@ -80,10 +79,8 @@ jobs:
         run: |
           set -euo pipefail
           umask 077
-          DRYRUN_LOG_FILE="$(mktemp)"
-          DEPLOY_LOG_FILE="$(mktemp)"
-          trap 'rm -f "$DRYRUN_LOG_FILE" "$DEPLOY_LOG_FILE"' EXIT INT TERM
           LFTP_CONNECT='set sftp:connect-program "ssh -a -x -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts"'
+          SFTP_PORT="${DREAMHOST_SFTP_PORT:-22}"
           execute_lftp_deployment() {
             local dry_run_flag="$1"
             lftp <<EOF
@@ -98,7 +95,7 @@ jobs:
           }
 
           echo "Running deployment dry-run over SFTP..."
-          execute_lftp_deployment "--dry-run" > "$DRYRUN_LOG_FILE" 2>&1 || {
+          execute_lftp_deployment "--dry-run" || {
             echo "Error: dry-run deployment failed"
             exit 1
           }
@@ -107,7 +104,7 @@ jobs:
             echo "Dry-run completed successfully."
           } >> "$GITHUB_STEP_SUMMARY"
           echo "Applying deployment..."
-          execute_lftp_deployment "" > "$DEPLOY_LOG_FILE" 2>&1 || { echo "Error: deployment failed"; exit 1; }
+          execute_lftp_deployment "" || { echo "Error: deployment failed"; exit 1; }
           {
             echo "### Deployment result"
             echo "Deployment completed successfully."
