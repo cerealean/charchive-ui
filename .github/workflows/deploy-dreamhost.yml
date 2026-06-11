@@ -76,10 +76,19 @@ jobs:
 
       - name: Deploy via rsync over SSH
         run: |
+          set -euo pipefail
           RSYNC_TARGET="$DREAMHOST_SSH_USER@$DREAMHOST_SSH_HOST:$DREAMHOST_DEPLOY_PATH"
-          RSYNC_SSH_OPTS="ssh -i ~/.ssh/id_ed25519 -p $SSH_PORT -o StrictHostKeyChecking=yes"
-          rsync -az --dry-run --delete-after -e "$RSYNC_SSH_OPTS" ./build/ "$RSYNC_TARGET"
-          rsync -az --delete-after -e "$RSYNC_SSH_OPTS" ./build/ "$RSYNC_TARGET"
+          RSYNC_SSH_OPTS="ssh -i ~/.ssh/id_ed25519 -p $SSH_PORT -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts"
+          echo "Running deployment dry-run..."
+          rsync -az --dry-run --delete-after -e "$RSYNC_SSH_OPTS" ./build/ "$RSYNC_TARGET" | tee /tmp/rsync-dry-run.log || { echo "Error: dry-run deployment failed"; exit 1; }
+          {
+            echo "### Deployment dry-run"
+            echo '```'
+            cat /tmp/rsync-dry-run.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "Applying deployment..."
+          rsync -az --delete-after -e "$RSYNC_SSH_OPTS" ./build/ "$RSYNC_TARGET" || { echo "Error: deployment failed"; exit 1; }
 
       - name: Clean up SSH material
         if: always()
