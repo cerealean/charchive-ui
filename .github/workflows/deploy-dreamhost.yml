@@ -99,7 +99,7 @@ jobs:
 
           echo "Running deployment dry-run over SFTP..."
           execute_lftp_deployment "--dry-run" > "$DRYRUN_LOG_FILE" 2>&1 || {
-            echo "Error: dry-run deployment failed; review logs for connection/auth/path details"
+            echo "Error: dry-run deployment failed"
             exit 1
           }
           {
@@ -107,7 +107,7 @@ jobs:
             echo "Dry-run completed successfully."
           } >> "$GITHUB_STEP_SUMMARY"
           echo "Applying deployment..."
-          execute_lftp_deployment "" > "$DEPLOY_LOG_FILE" 2>&1 || { echo "Error: deployment failed; review step logs"; exit 1; }
+          execute_lftp_deployment "" > "$DEPLOY_LOG_FILE" 2>&1 || { echo "Error: deployment failed"; exit 1; }
           {
             echo "### Deployment result"
             echo "Deployment completed successfully."
