@@ -59,6 +59,7 @@ jobs:
           test -n "$DREAMHOST_SSH_HOST" || { echo "Error: DREAMHOST_SSH_HOST is not set"; exit 1; }
           test -n "$DREAMHOST_SSH_USER" || { echo "Error: DREAMHOST_SSH_USER is not set"; exit 1; }
           test -n "$DREAMHOST_DEPLOY_PATH" || { echo "Error: DREAMHOST_DEPLOY_PATH is not set"; exit 1; }
+          test -f "./build/index.html" || { echo "Error: build artifact is missing index.html"; exit 1; }
           echo "SSH_PORT=${DREAMHOST_SSH_PORT:-22}" >> "$GITHUB_ENV"
 
       - name: Set up SSH key
@@ -86,3 +87,8 @@ jobs:
             -e "ssh -i ~/.ssh/id_ed25519 -p $SSH_PORT -o StrictHostKeyChecking=yes" \
             ./build/ \
             "$DREAMHOST_SSH_USER@$DREAMHOST_SSH_HOST:$DREAMHOST_DEPLOY_PATH"
+
+      - name: Clean up SSH material
+        if: always()
+        run: |
+          rm -f ~/.ssh/id_ed25519 ~/.ssh/known_hosts
