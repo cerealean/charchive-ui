@@ -80,10 +80,25 @@ jobs:
         run: |
           set -euo pipefail
           LFTP_CONNECT='set sftp:connect-program "ssh -a -x -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts"'
-          LFTP_OPEN="open -u \"$DREAMHOST_SFTP_USER\",\"$DREAMHOST_SFTP_PASSWORD\" sftp://$DREAMHOST_SFTP_HOST:$SFTP_PORT"
+          run_lftp_mirror() {
+            local dry_run_flag="$1"
+            local command_file="$2"
+            cat > "$command_file" <<EOF
+          set cmd:fail-exit true
+          $LFTP_CONNECT
+          open sftp://$DREAMHOST_SFTP_HOST:$SFTP_PORT
+          user "$DREAMHOST_SFTP_USER" "$DREAMHOST_SFTP_PASSWORD"
+          mirror --reverse --verbose --delete $dry_run_flag ./build "$DREAMHOST_DEPLOY_PATH"
+          bye
+          EOF
+            lftp -f "$command_file"
+          }
+
           echo "Running deployment dry-run over SFTP..."
-          lftp -e "set cmd:fail-exit true; $LFTP_CONNECT; $LFTP_OPEN; mirror --reverse --verbose --delete --dry-run ./build \"$DREAMHOST_DEPLOY_PATH\"; bye" \
-            | tee /tmp/sftp-dry-run.log || { echo "Error: dry-run deployment failed"; exit 1; }
+          run_lftp_mirror "--dry-run" /tmp/lftp-dry-run.cmd > /tmp/sftp-dry-run.log || {
+            echo "Error: dry-run deployment failed (check DREAMHOST_SFTP_KNOWN_HOSTS for host-key mismatches)"
+            exit 1
+          }
           {
             echo "### Deployment dry-run"
             echo '```'
@@ -91,8 +106,7 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
           echo "Applying deployment..."
-          lftp -e "set cmd:fail-exit true; $LFTP_CONNECT; $LFTP_OPEN; mirror --reverse --verbose --delete ./build \"$DREAMHOST_DEPLOY_PATH\"; bye" \
-            || { echo "Error: deployment failed"; exit 1; }
+          run_lftp_mirror "" /tmp/lftp-deploy.cmd || { echo "Error: deployment failed"; exit 1; }
 
       - name: Clean up host verification data
         if: always()
