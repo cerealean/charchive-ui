@@ -79,6 +79,11 @@ jobs:
           DREAMHOST_SFTP_PASSWORD: ${{ secrets.DREAMHOST_SFTP_PASSWORD }}
         run: |
           set -euo pipefail
+          umask 077
+          DRYRUN_CMD_FILE="$(mktemp)"
+          DEPLOY_CMD_FILE="$(mktemp)"
+          DRYRUN_LOG_FILE="$(mktemp)"
+          trap 'rm -f "$DRYRUN_CMD_FILE" "$DEPLOY_CMD_FILE" "$DRYRUN_LOG_FILE"' EXIT
           LFTP_CONNECT='set sftp:connect-program "ssh -a -x -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts"'
           run_lftp_mirror() {
             local dry_run_flag="$1"
@@ -91,22 +96,23 @@ jobs:
           mirror --reverse --verbose --delete $dry_run_flag ./build "$DREAMHOST_DEPLOY_PATH"
           bye
           EOF
+            chmod 600 "$command_file"
             lftp -f "$command_file"
           }
 
           echo "Running deployment dry-run over SFTP..."
-          run_lftp_mirror "--dry-run" /tmp/lftp-dry-run.cmd > /tmp/sftp-dry-run.log || {
+          run_lftp_mirror "--dry-run" "$DRYRUN_CMD_FILE" > "$DRYRUN_LOG_FILE" || {
             echo "Error: dry-run deployment failed (check DREAMHOST_SFTP_KNOWN_HOSTS for host-key mismatches)"
             exit 1
           }
           {
             echo "### Deployment dry-run"
             echo '```'
-            cat /tmp/sftp-dry-run.log
+            cat "$DRYRUN_LOG_FILE"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
           echo "Applying deployment..."
-          run_lftp_mirror "" /tmp/lftp-deploy.cmd || { echo "Error: deployment failed"; exit 1; }
+          run_lftp_mirror "" "$DEPLOY_CMD_FILE" || { echo "Error: deployment failed"; exit 1; }
 
       - name: Clean up host verification data
         if: always()
