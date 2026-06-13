@@ -73,12 +73,22 @@
         </div>
 
         @if (isRegisterMode) {
-          <form
-            [formGroup]="registerForm"
-            (ngSubmit)="onSubmit()"
-            class="flex flex-col gap-6"
-            novalidate
-          >
+          @if (awaitingConfirmation()) {
+            <div class="rounded-2xl bg-base-200 p-5 text-sm leading-6 text-base-content/80">
+              <p class="font-semibold text-base-content">Confirm your email to finish</p>
+              <p class="mt-1">
+                We sent a confirmation link to
+                <span class="font-medium text-base-content">{{ pendingEmail() }}</span>. Open it to
+                activate your account, then sign in.
+              </p>
+            </div>
+          } @else {
+            <form
+              [formGroup]="registerForm"
+              (ngSubmit)="onSubmit()"
+              class="flex flex-col gap-6"
+              novalidate
+            >
             <label class="form-control w-full">
               <div class="label px-0 pb-2">
                 <span class="label-text text-sm font-medium text-base-content">Email address</span>
@@ -180,12 +190,13 @@
             </button>
           </form>
 
-          <div class="divider my-0 text-xs text-base-content/50">Email confirmation required</div>
+            <div class="divider my-0 text-xs text-base-content/50">Email confirmation required</div>
 
-          <div class="rounded-2xl bg-base-200 p-4 text-sm leading-6 text-base-content/70">
-            After signing up, open the confirmation link we email you to activate your account and
-            sign in.
-          </div>
+            <div class="rounded-2xl bg-base-200 p-4 text-sm leading-6 text-base-content/70">
+              After signing up, open the confirmation link we email you to activate your account and
+              sign in.
+            </div>
+          }
         } @else {
           <form
             [formGroup]="signInForm"

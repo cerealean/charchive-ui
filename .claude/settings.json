@@ -6,7 +6,11 @@
       "Bash(supabase status:*)",
       "Bash(supabase db:*)",
       "Bash(supabase functions:*)",
-      "Bash(supabase gen:*)"
+      "Bash(supabase gen:*)",
+      "mcp__daisyui__fetch_generic_url_content",
+      "npx vitest run:*",
+      "Bash(npm run build)",
+      "Bash(npm run test)"
     ]
   }
 }

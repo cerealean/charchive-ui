@@ -38,6 +38,8 @@ export class LoginComponent {
   readonly submitted = signal(false);
   readonly successMessage = signal('');
   readonly errorMessage = signal('');
+  readonly awaitingConfirmation = signal(false);
+  readonly pendingEmail = signal('');
 
   readonly minPasswordLength = MIN_PASSWORD_LENGTH;
 
@@ -124,6 +126,7 @@ export class LoginComponent {
     this.submitted.set(false);
     this.successMessage.set('');
     this.errorMessage.set('');
+    this.awaitingConfirmation.set(false);
 
     if (mode === 'register') {
       this.registerForm.reset({ email, password: '', confirmPassword: '' });
@@ -230,6 +233,8 @@ export class LoginComponent {
         throw error;
       }
 
+      this.pendingEmail.set(email);
+      this.awaitingConfirmation.set(true);
       this.successMessage.set(
         'Account created. Check your email to confirm your address before signing in.',
       );
