@@ -542,7 +542,11 @@ insert into auth.users (
   raw_user_meta_data,
   created_at,
   updated_at,
-  is_anonymous
+  is_anonymous,
+  confirmation_token,
+  recovery_token,
+  email_change_token_new,
+  email_change
 )
 values (
   ${sqlString(user.id)},
@@ -556,7 +560,11 @@ values (
   ${sqlJson({ display_name: user.displayName, seeded: true })},
   ${sqlString(now)}::timestamptz,
   ${sqlString(now)}::timestamptz,
-  false
+  false,
+  '',
+  '',
+  '',
+  ''
 )
 on conflict (id) do nothing;`,
   ).join('\n');

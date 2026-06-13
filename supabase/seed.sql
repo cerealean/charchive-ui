@@ -16,7 +16,11 @@ insert into auth.users (
   raw_user_meta_data,
   created_at,
   updated_at,
-  is_anonymous
+  is_anonymous,
+  confirmation_token,
+  recovery_token,
+  email_change_token_new,
+  email_change
 )
 values (
   '11111111-1111-4111-8111-111111111111',
@@ -30,7 +34,11 @@ values (
   '{"display_name":"Seed Owner One","seeded":true}'::jsonb,
   '2026-06-07T07:59:25.503Z'::timestamptz,
   '2026-06-07T07:59:25.503Z'::timestamptz,
-  false
+  false,
+  '',
+  '',
+  '',
+  ''
 )
 on conflict (id) do nothing;
 
@@ -46,7 +54,11 @@ insert into auth.users (
   raw_user_meta_data,
   created_at,
   updated_at,
-  is_anonymous
+  is_anonymous,
+  confirmation_token,
+  recovery_token,
+  email_change_token_new,
+  email_change
 )
 values (
   '22222222-2222-4222-8222-222222222222',
@@ -60,7 +72,11 @@ values (
   '{"display_name":"Seed Owner Two","seeded":true}'::jsonb,
   '2026-06-07T07:59:25.503Z'::timestamptz,
   '2026-06-07T07:59:25.503Z'::timestamptz,
-  false
+  false,
+  '',
+  '',
+  '',
+  ''
 )
 on conflict (id) do nothing;
 
