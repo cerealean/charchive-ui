@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(supabase start:*)",
+      "Bash(supabase stop:*)",
+      "Bash(supabase status:*)",
+      "Bash(supabase db:*)",
+      "Bash(supabase functions:*)",
+      "Bash(supabase gen:*)"
+    ]
+  }
+}
