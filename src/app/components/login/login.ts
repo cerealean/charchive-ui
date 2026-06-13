@@ -249,6 +249,32 @@ export class LoginComponent {
     }
   }
 
+  async resendConfirmation(): Promise<void> {
+    const email = this.pendingEmail();
+    if (!email) {
+      return;
+    }
+
+    this.successMessage.set('');
+    this.errorMessage.set('');
+
+    try {
+      this.loading.set(true);
+      const { error } = await this.auth.resendConfirmation(email);
+      if (error) {
+        throw error;
+      }
+
+      this.successMessage.set(`Confirmation email resent to ${email}.`);
+    } catch (error) {
+      this.errorMessage.set(
+        error instanceof Error ? error.message : 'Unable to resend the confirmation email.',
+      );
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
   private resetSignInForm(): void {
     this.showPassword.set(false);
     this.submitted.set(false);

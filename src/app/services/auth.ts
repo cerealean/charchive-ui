@@ -43,6 +43,10 @@ export class AuthService {
     return this.supabase.client.auth.signUp({ email, password });
   }
 
+  resendConfirmation(email: string) {
+    return this.supabase.client.auth.resend({ type: 'signup', email });
+  }
+
   signOut() {
     return this.supabase.client.auth.signOut({ scope: 'local' });
   }

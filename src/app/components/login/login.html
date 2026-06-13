@@ -74,13 +74,29 @@
 
         @if (isRegisterMode) {
           @if (awaitingConfirmation()) {
-            <div class="rounded-2xl bg-base-200 p-5 text-sm leading-6 text-base-content/80">
-              <p class="font-semibold text-base-content">Confirm your email to finish</p>
-              <p class="mt-1">
-                We sent a confirmation link to
-                <span class="font-medium text-base-content">{{ pendingEmail() }}</span>. Open it to
-                activate your account, then sign in.
-              </p>
+            <div class="flex flex-col gap-4">
+              <div class="rounded-2xl bg-base-200 p-5 text-sm leading-6 text-base-content/80">
+                <p class="font-semibold text-base-content">Confirm your email to finish</p>
+                <p class="mt-1">
+                  We sent a confirmation link to
+                  <span class="font-medium text-base-content">{{ pendingEmail() }}</span>. Open it
+                  to activate your account, then sign in.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                class="btn btn-outline btn-lg w-full"
+                [disabled]="loading()"
+                (click)="resendConfirmation()"
+              >
+                @if (loading()) {
+                  <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
+                  Resending...
+                } @else {
+                  Resend confirmation email
+                }
+              </button>
             </div>
           } @else {
             <form

@@ -12,14 +12,19 @@ describe('LoginComponent', () => {
   let passwordCalls: { email: string; password: string }[] = [];
   let passwordError: Error | null = null;
   let signUpCalls: { email: string; password: string }[] = [];
+  let resendCalls: string[] = [];
   let navigatedTo: string | null = null;
-  let authService: Pick<AuthService, 'signIn' | 'signInWithPassword' | 'signUp'>;
+  let authService: Pick<
+    AuthService,
+    'signIn' | 'signInWithPassword' | 'signUp' | 'resendConfirmation'
+  >;
 
   beforeEach(async () => {
     signInCalls = 0;
     passwordCalls = [];
     passwordError = null;
     signUpCalls = [];
+    resendCalls = [];
     navigatedTo = null;
 
     authService = {
@@ -47,6 +52,10 @@ describe('LoginComponent', () => {
           error: null,
         };
       }) as AuthService['signUp'],
+      resendConfirmation: (async (email: string) => {
+        resendCalls.push(email);
+        return { data: {}, error: null };
+      }) as AuthService['resendConfirmation'],
     };
 
     const routerStub = {
@@ -192,5 +201,24 @@ describe('LoginComponent', () => {
     expect(signUpCalls).toEqual([{ email: 'new@example.com', password: 's3cret-pass' }]);
     expect(component.successMessage()).toContain('Check your email');
     expect(navigatedTo).toBeNull();
+  });
+
+  it('hides the form and offers a resend after a successful sign-up', async () => {
+    fixture.detectChanges();
+    component.setMode('register');
+    component.registerEmail.setValue('new@example.com');
+    component.registerPassword.setValue('s3cret-pass');
+    component.registerConfirm.setValue('s3cret-pass');
+
+    await component.register();
+    fixture.detectChanges();
+
+    expect(component.awaitingConfirmation()).toBe(true);
+    expect(fixture.debugElement.query(By.css('#register-email'))).toBeNull();
+
+    await component.resendConfirmation();
+
+    expect(resendCalls).toEqual(['new@example.com']);
+    expect(component.successMessage()).toContain('resent');
   });
 });
