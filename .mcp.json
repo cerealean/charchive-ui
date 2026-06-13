@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "supabase": {
+      "type": "http",
+      "url": "http://localhost:54321/mcp"
+    },
+    "daisyui": {
+      "type": "http",
+      "url": "https://gitmcp.io/saadeghi/daisyui"
+    }
+  }
+}
