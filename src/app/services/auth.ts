@@ -58,6 +58,21 @@ export class AuthService {
     return this.supabase.client.auth.updateUser({ password });
   }
 
+  async verifyPassword(email: string, password: string): Promise<boolean> {
+    const { error } = await this.supabase.client.auth.signInWithPassword({ email, password });
+    return !error;
+  }
+
+  async hasPassword(): Promise<boolean> {
+    const { data, error } = await this.supabase.client.rpc('current_user_has_password');
+
+    if (error) {
+      return false;
+    }
+
+    return data === true;
+  }
+
   signOut() {
     return this.supabase.client.auth.signOut({ scope: 'local' });
   }

@@ -7,6 +7,7 @@ import {
   OnInit,
   computed,
   inject,
+  signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -22,13 +23,14 @@ import {
   usernameSyncValidators,
 } from '../../shared/username-validation';
 import { AvatarComponent } from '../avatar/avatar';
+import { ChangePasswordComponent } from '../change-password/change-password';
 
 @Component({
   selector: 'app-account',
   templateUrl: './account.html',
   styleUrls: ['./account.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, AvatarComponent],
+  imports: [ReactiveFormsModule, AvatarComponent, ChangePasswordComponent],
 })
 export class AccountComponent implements OnInit {
   private readonly auth = inject(AuthService);
@@ -41,6 +43,7 @@ export class AccountComponent implements OnInit {
   statusMessage = '';
   errorMessage = '';
   profile?: Profile;
+  readonly hasPassword = signal(false);
   readonly updateProfileForm = this.formBuilder.nonNullable.group({
     username: this.formBuilder.nonNullable.control('', {
       validators: usernameSyncValidators,
@@ -115,6 +118,8 @@ export class AccountComponent implements OnInit {
       this.errorMessage = 'No active session found. Please sign in again.';
       return;
     }
+
+    this.hasPassword.set(await this.auth.hasPassword());
 
     await this.getProfile();
 
@@ -213,6 +218,15 @@ export class AccountComponent implements OnInit {
       this.loading = false;
       this.detectChangesSafely();
     }
+  }
+
+  onPasswordSaved(created: boolean): void {
+    this.statusMessage = created
+      ? 'Password created successfully.'
+      : 'Password updated successfully.';
+    this.errorMessage = '';
+    this.hasPassword.set(true);
+    this.detectChangesSafely();
   }
 
   private detectChangesSafely(): void {

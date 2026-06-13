@@ -13,6 +13,7 @@ describe('AccountComponent', () => {
   const authServiceMock = {
     getUser: async () => null,
     signOut: async () => ({ error: null }),
+    hasPassword: async () => false,
   } as unknown as AuthService;
 
   const profileServiceMock = {
