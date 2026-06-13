@@ -87,8 +87,8 @@ describe('ResetPasswordComponent', () => {
   it('does not update when the new passwords do not match', async () => {
     component.mode.set('update');
     fixture.detectChanges();
-    component.newPassword.setValue('s3cret-pass');
-    component.confirmPassword.setValue('different-pass');
+    component.newPassword.setValue('Str0ng!Pass');
+    component.confirmPassword.setValue('Different!1');
     fixture.detectChanges();
 
     await component.updatePassword();
@@ -104,12 +104,12 @@ describe('ResetPasswordComponent', () => {
   it('updates the password and navigates home when valid', async () => {
     component.mode.set('update');
     fixture.detectChanges();
-    component.newPassword.setValue('s3cret-pass');
-    component.confirmPassword.setValue('s3cret-pass');
+    component.newPassword.setValue('Str0ng!Pass');
+    component.confirmPassword.setValue('Str0ng!Pass');
 
     await component.updatePassword();
 
-    expect(updateCalls).toEqual(['s3cret-pass']);
+    expect(updateCalls).toEqual(['Str0ng!Pass']);
     expect(navigatedTo).toBe('/my/cards');
   });
 });

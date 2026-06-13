@@ -170,8 +170,8 @@ describe('LoginComponent', () => {
     fixture.detectChanges();
     component.setMode('register');
     component.registerEmail.setValue('new@example.com');
-    component.registerPassword.setValue('s3cret-pass');
-    component.registerConfirm.setValue('different-pass');
+    component.registerPassword.setValue('Str0ng!Pass');
+    component.registerConfirm.setValue('Different!1');
     fixture.detectChanges();
 
     await component.register();
@@ -184,17 +184,30 @@ describe('LoginComponent', () => {
     expect(signUpCalls.length).toBe(0);
   });
 
+  it('does not register with a password that fails the strength rules', async () => {
+    fixture.detectChanges();
+    component.setMode('register');
+    component.registerEmail.setValue('new@example.com');
+    component.registerPassword.setValue('weakpass');
+    component.registerConfirm.setValue('weakpass');
+
+    await component.register();
+
+    expect(component.registerPassword.hasError('passwordStrength')).toBe(true);
+    expect(signUpCalls.length).toBe(0);
+  });
+
   it('registers and shows a confirmation message when the form is valid', async () => {
     fixture.detectChanges();
     component.setMode('register');
     component.registerEmail.setValue('new@example.com');
-    component.registerPassword.setValue('s3cret-pass');
-    component.registerConfirm.setValue('s3cret-pass');
+    component.registerPassword.setValue('Str0ng!Pass');
+    component.registerConfirm.setValue('Str0ng!Pass');
 
     await component.register();
     fixture.detectChanges();
 
-    expect(signUpCalls).toEqual([{ email: 'new@example.com', password: 's3cret-pass' }]);
+    expect(signUpCalls).toEqual([{ email: 'new@example.com', password: 'Str0ng!Pass' }]);
     expect(component.successMessage()).toContain('Check your email');
     expect(navigatedTo).toBeNull();
   });
@@ -203,8 +216,8 @@ describe('LoginComponent', () => {
     fixture.detectChanges();
     component.setMode('register');
     component.registerEmail.setValue('new@example.com');
-    component.registerPassword.setValue('s3cret-pass');
-    component.registerConfirm.setValue('s3cret-pass');
+    component.registerPassword.setValue('Str0ng!Pass');
+    component.registerConfirm.setValue('Str0ng!Pass');
 
     await component.register();
     fixture.detectChanges();

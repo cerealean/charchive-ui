@@ -144,27 +144,19 @@
                 placeholder="Create a password"
                 autocomplete="new-password"
                 [attr.aria-invalid]="showRegisterPasswordError"
-                [attr.aria-describedby]="
-                  showRegisterPasswordError ? 'register-password-error' : 'register-password-hint'
-                "
+                aria-describedby="register-password-requirements"
               />
-              @if (showRegisterPasswordError) {
-                <div class="label px-0 pt-2">
-                  <span id="register-password-error" class="label-text-alt text-error">
-                    @if (registerPassword.hasError('required')) {
-                      Password is required.
-                    } @else {
-                      Use at least {{ minPasswordLength }} characters.
-                    }
-                  </span>
-                </div>
-              } @else {
-                <div class="label px-0 pt-2">
-                  <span id="register-password-hint" class="label-text-alt text-base-content/60">
-                    At least {{ minPasswordLength }} characters.
-                  </span>
-                </div>
-              }
+              <ul
+                id="register-password-requirements"
+                class="mt-3 grid gap-1 text-sm text-base-content"
+              >
+                @for (req of registerPasswordRequirements; track req.label) {
+                  <li [class.text-success]="req.met" [class.opacity-60]="!req.met">
+                    <span aria-hidden="true">{{ req.met ? '✓' : '○' }}</span>
+                    {{ req.label }}
+                  </li>
+                }
+              </ul>
             </label>
 
             <label class="form-control w-full">

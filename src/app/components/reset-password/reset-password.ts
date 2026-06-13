@@ -7,27 +7,19 @@ import {
   signal,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import {
-  AbstractControl,
-  ReactiveFormsModule,
-  ValidationErrors,
-  Validators,
-  FormBuilder,
-} from '@angular/forms';
+import { ReactiveFormsModule, Validators, FormBuilder } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth';
+import {
+  passwordRequirements,
+  passwordStrengthValidator,
+  passwordsMatch,
+} from '../../shared/password-validation';
 
 type ResetMode = 'request' | 'update';
 
 const AUTHENTICATED_HOME_PATH = '/my/cards';
 const RESET_PASSWORD_PATH = '/reset-password';
-const MIN_PASSWORD_LENGTH = 6;
-
-function passwordsMatch(group: AbstractControl): ValidationErrors | null {
-  const password = group.get('password')?.value;
-  const confirmPassword = group.get('confirmPassword')?.value;
-  return password === confirmPassword ? null : { passwordMismatch: true };
-}
 
 @Component({
   selector: 'app-reset-password',
@@ -47,7 +39,6 @@ export class ResetPasswordComponent {
   readonly submitted = signal(false);
   readonly successMessage = signal('');
   readonly errorMessage = signal('');
-  readonly minPasswordLength = MIN_PASSWORD_LENGTH;
 
   readonly requestForm = this.formBuilder.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
@@ -55,7 +46,7 @@ export class ResetPasswordComponent {
 
   readonly updateForm = this.formBuilder.nonNullable.group(
     {
-      password: ['', [Validators.required, Validators.minLength(MIN_PASSWORD_LENGTH)]],
+      password: ['', [Validators.required, passwordStrengthValidator]],
       confirmPassword: ['', [Validators.required]],
     },
     { validators: passwordsMatch },
@@ -89,6 +80,10 @@ export class ResetPasswordComponent {
 
   get confirmPassword() {
     return this.updateForm.controls.confirmPassword;
+  }
+
+  get passwordRequirements(): { met: boolean; label: string }[] {
+    return passwordRequirements(this.newPassword.value);
   }
 
   get showRequestEmailError(): boolean {

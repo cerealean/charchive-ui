@@ -12,7 +12,7 @@ import { ReactiveFormsModule, Validators, FormBuilder } from '@angular/forms';
 
 import { AuthService } from '../../services/auth';
 import {
-  evaluatePassword,
+  passwordRequirements,
   passwordStrengthValidator,
   passwordsMatch,
 } from '../../shared/password-validation';
@@ -58,19 +58,8 @@ export class ChangePasswordComponent {
     return this.form.controls.confirmPassword;
   }
 
-  get passwordChecks() {
-    return evaluatePassword(this.passwordControl.value);
-  }
-
   get requirements(): { met: boolean; label: string }[] {
-    const checks = this.passwordChecks;
-    return [
-      { met: checks.minLength, label: 'At least 8 characters' },
-      { met: checks.lowercase, label: 'One lowercase letter' },
-      { met: checks.uppercase, label: 'One uppercase letter' },
-      { met: checks.number, label: 'One number' },
-      { met: checks.symbol, label: 'One symbol' },
-    ];
+    return passwordRequirements(this.passwordControl.value);
   }
 
   get showCurrentPasswordError(): boolean {

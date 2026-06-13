@@ -1,24 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import {
-  AbstractControl,
-  ReactiveFormsModule,
-  ValidationErrors,
-  Validators,
-  FormBuilder,
-} from '@angular/forms';
+import { ReactiveFormsModule, Validators, FormBuilder } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth';
+import { passwordRequirements, passwordStrengthValidator, passwordsMatch } from '../../shared/password-validation';
 
 type AuthMode = 'sign-in' | 'register';
 
 const AUTHENTICATED_HOME_PATH = '/my/cards';
-const MIN_PASSWORD_LENGTH = 6;
-
-function passwordsMatch(group: AbstractControl): ValidationErrors | null {
-  const password = group.get('password')?.value;
-  const confirmPassword = group.get('confirmPassword')?.value;
-  return password === confirmPassword ? null : { passwordMismatch: true };
-}
 
 @Component({
   selector: 'app-login',
@@ -41,8 +29,6 @@ export class LoginComponent {
   readonly awaitingConfirmation = signal(false);
   readonly pendingEmail = signal('');
 
-  readonly minPasswordLength = MIN_PASSWORD_LENGTH;
-
   readonly signInForm = this.formBuilder.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
     password: [''],
@@ -51,7 +37,7 @@ export class LoginComponent {
   readonly registerForm = this.formBuilder.nonNullable.group(
     {
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(MIN_PASSWORD_LENGTH)]],
+      password: ['', [Validators.required, passwordStrengthValidator]],
       confirmPassword: ['', [Validators.required]],
     },
     { validators: passwordsMatch },
@@ -75,6 +61,10 @@ export class LoginComponent {
 
   get registerConfirm() {
     return this.registerForm.controls.confirmPassword;
+  }
+
+  get registerPasswordRequirements(): { met: boolean; label: string }[] {
+    return passwordRequirements(this.registerPassword.value);
   }
 
   get isRegisterMode(): boolean {

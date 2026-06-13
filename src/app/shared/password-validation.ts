@@ -30,6 +30,17 @@ export function passwordStrengthValidator(control: AbstractControl): ValidationE
   return isStrongPassword(value) ? null : { passwordStrength: checks };
 }
 
+export function passwordRequirements(value: string): { met: boolean; label: string }[] {
+  const checks = evaluatePassword(value ?? '');
+  return [
+    { met: checks.minLength, label: `At least ${MIN_PASSWORD_LENGTH} characters` },
+    { met: checks.lowercase, label: 'One lowercase letter' },
+    { met: checks.uppercase, label: 'One uppercase letter' },
+    { met: checks.number, label: 'One number' },
+    { met: checks.symbol, label: 'One symbol' },
+  ];
+}
+
 export function passwordsMatch(group: AbstractControl): ValidationErrors | null {
   const password = group.get('password')?.value;
   const confirmPassword = group.get('confirmPassword')?.value;
