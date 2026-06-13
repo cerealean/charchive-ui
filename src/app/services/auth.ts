@@ -47,6 +47,17 @@ export class AuthService {
     return this.supabase.client.auth.resend({ type: 'signup', email });
   }
 
+  resetPassword(email: string, redirectTo?: string) {
+    return this.supabase.client.auth.resetPasswordForEmail(
+      email,
+      redirectTo ? { redirectTo } : undefined,
+    );
+  }
+
+  updatePassword(password: string) {
+    return this.supabase.client.auth.updateUser({ password });
+  }
+
   signOut() {
     return this.supabase.client.auth.signOut({ scope: 'local' });
   }

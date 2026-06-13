@@ -17,6 +17,11 @@ export const routes: Routes = [
         loadComponent: () => import('./components/login/login').then((m) => m.LoginComponent),
       },
       {
+        path: 'reset-password',
+        loadComponent: () =>
+          import('./components/reset-password/reset-password').then((m) => m.ResetPasswordComponent),
+      },
+      {
         path: 'my',
         canActivate: [mustBeLoggedIn],
         children: [

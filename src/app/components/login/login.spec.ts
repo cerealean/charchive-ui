@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { Router } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 
 import { LoginComponent } from './login';
 import { AuthService } from '../../services/auth';
@@ -58,20 +58,16 @@ describe('LoginComponent', () => {
       }) as AuthService['resendConfirmation'],
     };
 
-    const routerStub = {
-      navigateByUrl: async (url: string) => {
-        navigatedTo = url;
-        return true;
-      },
-    };
-
     await TestBed.configureTestingModule({
       imports: [LoginComponent],
-      providers: [
-        { provide: AuthService, useValue: authService },
-        { provide: Router, useValue: routerStub },
-      ],
+      providers: [provideRouter([]), { provide: AuthService, useValue: authService }],
     }).compileComponents();
+
+    const router = TestBed.inject(Router);
+    vi.spyOn(router, 'navigateByUrl').mockImplementation(async (url) => {
+      navigatedTo = url.toString();
+      return true;
+    });
 
     fixture = TestBed.createComponent(LoginComponent);
     component = fixture.componentInstance;

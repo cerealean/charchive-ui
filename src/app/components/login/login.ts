@@ -6,7 +6,7 @@ import {
   Validators,
   FormBuilder,
 } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth';
 
 type AuthMode = 'sign-in' | 'register';
@@ -24,7 +24,7 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
   selector: 'app-login',
   templateUrl: './login.html',
   styleUrls: ['./login.css'],
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoginComponent {
