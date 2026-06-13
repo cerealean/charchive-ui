@@ -10,7 +10,8 @@
         <div class="space-y-4">
           <h1 class="text-4xl font-black tracking-tight sm:text-5xl">Welcome back</h1>
           <p class="max-w-lg text-base leading-7 text-neutral-content/75 sm:text-lg">
-            Sign in with a secure magic link and pick up exactly where you left off.
+            Sign in with a secure magic link or your email and password, and pick up exactly where
+            you left off.
           </p>
         </div>
       </div>
@@ -35,28 +36,27 @@
       <div class="card-body gap-6 p-6 sm:p-8">
         <div class="space-y-2">
           <p class="text-sm font-semibold uppercase tracking-[0.2em] text-primary">Login</p>
-          <h2 class="text-3xl font-bold text-base-content">Send a magic link</h2>
+          <h2 class="text-3xl font-bold text-base-content">Sign in to your account</h2>
           <p class="text-sm leading-6 text-base-content/70">
-            Enter the email address tied to your account. We will send a secure sign-in link that
-            expires automatically.
+            Enter your email to receive a secure magic link, or use your password instead.
           </p>
         </div>
 
         <div aria-live="polite" class="space-y-3">
-          @if (successMessage) {
+          @if (successMessage()) {
             <div role="status" class="alert alert-success alert-soft">
-              <span>{{ successMessage }}</span>
+              <span>{{ successMessage() }}</span>
             </div>
           }
 
-          @if (errorMessage) {
+          @if (errorMessage()) {
             <div role="alert" class="alert alert-error alert-soft">
-              <span>{{ errorMessage }}</span>
+              <span>{{ errorMessage() }}</span>
             </div>
           }
         </div>
 
-        <form [formGroup]="signInForm" (ngSubmit)="onSubmit()" class="space-y-5" novalidate>
+        <form [formGroup]="signInForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-6" novalidate>
           <label class="form-control w-full">
             <div class="label px-0 pb-2">
               <span class="label-text text-sm font-medium text-base-content">Email address</span>
@@ -84,22 +84,86 @@
             }
           </label>
 
-          <button type="submit" class="btn btn-primary btn-lg w-full" [disabled]="loading">
-            @if (loading) {
-              <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
-              Sending link...
+          @if (showPassword()) {
+            <label class="form-control w-full">
+              <div class="label px-0 pb-2">
+                <span class="label-text text-sm font-medium text-base-content">Password</span>
+              </div>
+              <input
+                id="password"
+                formControlName="password"
+                class="input input-bordered input-lg w-full"
+                type="password"
+                placeholder="Enter your password"
+                autocomplete="current-password"
+                [attr.aria-invalid]="showPasswordError"
+                [attr.aria-describedby]="showPasswordError ? 'password-error' : null"
+              />
+              @if (showPasswordError) {
+                <div class="label px-0 pt-2">
+                  <span id="password-error" class="label-text-alt text-error">
+                    Password is required.
+                  </span>
+                </div>
+              }
+            </label>
+          }
+
+          <div class="flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              class="btn btn-primary btn-lg w-full sm:flex-1"
+              [disabled]="loading()"
+              (click)="sendMagicLink()"
+            >
+              @if (loading() && !showPassword()) {
+                <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
+                Sending link...
+              } @else {
+                Send magic link
+              }
+            </button>
+
+            @if (showPassword()) {
+              <button
+                type="submit"
+                class="btn btn-secondary btn-lg w-full sm:flex-1"
+                [disabled]="loading()"
+              >
+                @if (loading()) {
+                  <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
+                  Signing in...
+                } @else {
+                  Sign in
+                }
+              </button>
             } @else {
-              Send magic link
+              <button
+                type="button"
+                class="btn btn-outline btn-lg w-full sm:flex-1"
+                [disabled]="loading()"
+                (click)="revealPassword()"
+              >
+                Use password
+              </button>
             }
-          </button>
+          </div>
         </form>
 
-        <div class="divider my-0 text-xs text-base-content/50">Secure, passwordless access</div>
+        @if (showPassword()) {
+          <div class="divider my-0 text-xs text-base-content/50">Email and password access</div>
 
-        <div class="rounded-2xl bg-base-200 p-4 text-sm leading-6 text-base-content/70">
-          The link opens a verified session for this email only. If you do not see the message
-          within a minute, check spam or request a fresh link.
-        </div>
+          <div class="rounded-2xl bg-base-200 p-4 text-sm leading-6 text-base-content/70">
+            Prefer a one-time link? Use the magic link option above for passwordless sign-in.
+          </div>
+        } @else {
+          <div class="divider my-0 text-xs text-base-content/50">Secure, passwordless access</div>
+
+          <div class="rounded-2xl bg-base-200 p-4 text-sm leading-6 text-base-content/70">
+            The link opens a verified session for this email only. If you do not see the message
+            within a minute, check spam or request a fresh link.
+          </div>
+        }
       </div>
     </div>
   </div>

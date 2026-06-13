@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { Router } from '@angular/router';
 
 import { LoginComponent } from './login';
 import { AuthService } from '../../services/auth';
@@ -8,10 +9,17 @@ describe('LoginComponent', () => {
   let component: LoginComponent;
   let fixture: ComponentFixture<LoginComponent>;
   let signInCalls = 0;
-  let authService: Pick<AuthService, 'signIn'>;
+  let passwordCalls: { email: string; password: string }[] = [];
+  let passwordError: Error | null = null;
+  let navigatedTo: string | null = null;
+  let authService: Pick<AuthService, 'signIn' | 'signInWithPassword'>;
 
   beforeEach(async () => {
     signInCalls = 0;
+    passwordCalls = [];
+    passwordError = null;
+    navigatedTo = null;
+
     authService = {
       signIn: async () => {
         signInCalls += 1;
@@ -23,11 +31,28 @@ describe('LoginComponent', () => {
           error: null,
         };
       },
+      signInWithPassword: (async (email: string, password: string) => {
+        passwordCalls.push({ email, password });
+        return {
+          data: { user: null, session: null },
+          error: passwordError,
+        };
+      }) as AuthService['signInWithPassword'],
+    };
+
+    const routerStub = {
+      navigateByUrl: async (url: string) => {
+        navigatedTo = url;
+        return true;
+      },
     };
 
     await TestBed.configureTestingModule({
       imports: [LoginComponent],
-      providers: [{ provide: AuthService, useValue: authService }],
+      providers: [
+        { provide: AuthService, useValue: authService },
+        { provide: Router, useValue: routerStub },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(LoginComponent);
@@ -39,15 +64,79 @@ describe('LoginComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('shows validation feedback after submitting an empty form', () => {
+  it('shows validation feedback when sending a magic link with an empty email', async () => {
     fixture.detectChanges();
 
-    component.onSubmit();
+    await component.sendMagicLink();
     fixture.detectChanges();
 
     const errorText = fixture.debugElement.query(By.css('#email-error'))?.nativeElement.textContent;
 
     expect(errorText).toContain('Email is required.');
     expect(signInCalls).toBe(0);
+  });
+
+  it('sends a magic link when the email is valid', async () => {
+    fixture.detectChanges();
+    component.emailControl.setValue('user@example.com');
+
+    await component.sendMagicLink();
+    fixture.detectChanges();
+
+    expect(signInCalls).toBe(1);
+    expect(component.successMessage()).toContain('Magic link sent');
+  });
+
+  it('hides the password field until "Use password" is chosen', () => {
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('#password'))).toBeNull();
+
+    component.revealPassword();
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('#password'))).toBeTruthy();
+  });
+
+  it('requires a password before signing in with a password', async () => {
+    fixture.detectChanges();
+    component.revealPassword();
+    component.emailControl.setValue('user@example.com');
+    fixture.detectChanges();
+
+    await component.signInWithPassword();
+    fixture.detectChanges();
+
+    const errorText =
+      fixture.debugElement.query(By.css('#password-error'))?.nativeElement.textContent;
+
+    expect(errorText).toContain('Password is required.');
+    expect(passwordCalls.length).toBe(0);
+  });
+
+  it('signs in and navigates home when password credentials are valid', async () => {
+    fixture.detectChanges();
+    component.revealPassword();
+    component.emailControl.setValue('user@example.com');
+    component.passwordControl.setValue('s3cret-pass');
+
+    await component.signInWithPassword();
+
+    expect(passwordCalls).toEqual([{ email: 'user@example.com', password: 's3cret-pass' }]);
+    expect(navigatedTo).toBe('/my/cards');
+  });
+
+  it('surfaces an error message when password sign-in fails', async () => {
+    passwordError = new Error('Invalid login credentials');
+    fixture.detectChanges();
+    component.revealPassword();
+    component.emailControl.setValue('user@example.com');
+    component.passwordControl.setValue('wrong-pass');
+
+    await component.signInWithPassword();
+    fixture.detectChanges();
+
+    expect(component.errorMessage()).toBe('Invalid login credentials');
+    expect(navigatedTo).toBeNull();
   });
 });
