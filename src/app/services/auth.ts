@@ -39,6 +39,10 @@ export class AuthService {
     return this.supabase.client.auth.signInWithPassword({ email, password });
   }
 
+  signUp(email: string, password: string) {
+    return this.supabase.client.auth.signUp({ email, password });
+  }
+
   signOut() {
     return this.supabase.client.auth.signOut({ scope: 'local' });
   }

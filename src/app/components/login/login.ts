@@ -1,9 +1,24 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { ReactiveFormsModule, Validators, FormBuilder } from '@angular/forms';
+import {
+  AbstractControl,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+  FormBuilder,
+} from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth';
 
+type AuthMode = 'sign-in' | 'register';
+
 const AUTHENTICATED_HOME_PATH = '/my/cards';
+const MIN_PASSWORD_LENGTH = 6;
+
+function passwordsMatch(group: AbstractControl): ValidationErrors | null {
+  const password = group.get('password')?.value;
+  const confirmPassword = group.get('confirmPassword')?.value;
+  return password === confirmPassword ? null : { passwordMismatch: true };
+}
 
 @Component({
   selector: 'app-login',
@@ -17,16 +32,28 @@ export class LoginComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly router = inject(Router);
 
+  readonly mode = signal<AuthMode>('sign-in');
   readonly showPassword = signal(false);
   readonly loading = signal(false);
   readonly submitted = signal(false);
   readonly successMessage = signal('');
   readonly errorMessage = signal('');
 
+  readonly minPasswordLength = MIN_PASSWORD_LENGTH;
+
   readonly signInForm = this.formBuilder.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
     password: [''],
   });
+
+  readonly registerForm = this.formBuilder.nonNullable.group(
+    {
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(MIN_PASSWORD_LENGTH)]],
+      confirmPassword: ['', [Validators.required]],
+    },
+    { validators: passwordsMatch },
+  );
 
   get emailControl() {
     return this.signInForm.controls.email;
@@ -34,6 +61,22 @@ export class LoginComponent {
 
   get passwordControl() {
     return this.signInForm.controls.password;
+  }
+
+  get registerEmail() {
+    return this.registerForm.controls.email;
+  }
+
+  get registerPassword() {
+    return this.registerForm.controls.password;
+  }
+
+  get registerConfirm() {
+    return this.registerForm.controls.confirmPassword;
+  }
+
+  get isRegisterMode(): boolean {
+    return this.mode() === 'register';
   }
 
   get showEmailError(): boolean {
@@ -48,6 +91,50 @@ export class LoginComponent {
     );
   }
 
+  get showRegisterEmailError(): boolean {
+    return (this.submitted() || this.registerEmail.touched) && this.registerEmail.invalid;
+  }
+
+  get showRegisterPasswordError(): boolean {
+    return (this.submitted() || this.registerPassword.touched) && this.registerPassword.invalid;
+  }
+
+  get showConfirmError(): boolean {
+    if (!(this.submitted() || this.registerConfirm.touched)) {
+      return false;
+    }
+
+    return this.registerConfirm.invalid || this.hasPasswordMismatch;
+  }
+
+  get hasPasswordMismatch(): boolean {
+    return this.registerForm.hasError('passwordMismatch') && this.registerPassword.valid;
+  }
+
+  setMode(mode: AuthMode): void {
+    if (mode === this.mode()) {
+      return;
+    }
+
+    const email = this.isRegisterMode
+      ? this.registerEmail.getRawValue()
+      : this.emailControl.getRawValue();
+
+    this.mode.set(mode);
+    this.submitted.set(false);
+    this.successMessage.set('');
+    this.errorMessage.set('');
+
+    if (mode === 'register') {
+      this.registerForm.reset({ email, password: '', confirmPassword: '' });
+    } else {
+      this.showPassword.set(false);
+      this.passwordControl.clearValidators();
+      this.passwordControl.updateValueAndValidity();
+      this.signInForm.reset({ email, password: '' });
+    }
+  }
+
   revealPassword(): void {
     this.showPassword.set(true);
     this.successMessage.set('');
@@ -57,6 +144,10 @@ export class LoginComponent {
   }
 
   onSubmit(): Promise<void> {
+    if (this.isRegisterMode) {
+      return this.register();
+    }
+
     return this.showPassword() ? this.signInWithPassword() : this.sendMagicLink();
   }
 
@@ -79,7 +170,7 @@ export class LoginComponent {
       }
 
       this.successMessage.set('Magic link sent. Check your inbox to finish signing in.');
-      this.resetForm();
+      this.resetSignInForm();
     } catch (error) {
       this.errorMessage.set(
         error instanceof Error ? error.message : 'Unable to send the magic link.',
@@ -120,7 +211,40 @@ export class LoginComponent {
     }
   }
 
-  private resetForm(): void {
+  async register(): Promise<void> {
+    this.submitted.set(true);
+    this.successMessage.set('');
+    this.errorMessage.set('');
+    this.registerForm.markAllAsTouched();
+
+    if (this.registerForm.invalid) {
+      return;
+    }
+
+    try {
+      this.loading.set(true);
+      const email = this.registerEmail.getRawValue().trim();
+      const password = this.registerPassword.getRawValue();
+      const { error } = await this.auth.signUp(email, password);
+      if (error) {
+        throw error;
+      }
+
+      this.successMessage.set(
+        'Account created. Check your email to confirm your address before signing in.',
+      );
+      this.registerForm.reset({ email: '', password: '', confirmPassword: '' });
+      this.submitted.set(false);
+    } catch (error) {
+      this.errorMessage.set(
+        error instanceof Error ? error.message : 'Unable to create your account.',
+      );
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  private resetSignInForm(): void {
     this.showPassword.set(false);
     this.submitted.set(false);
     this.passwordControl.clearValidators();

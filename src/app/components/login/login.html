@@ -8,11 +8,18 @@
           Charchive Access
         </div>
         <div class="space-y-4">
-          <h1 class="text-4xl font-black tracking-tight sm:text-5xl">Welcome back</h1>
-          <p class="max-w-lg text-base leading-7 text-neutral-content/75 sm:text-lg">
-            Sign in with a secure magic link or your email and password, and pick up exactly where
-            you left off.
-          </p>
+          @if (isRegisterMode) {
+            <h1 class="text-4xl font-black tracking-tight sm:text-5xl">Join Charchive</h1>
+            <p class="max-w-lg text-base leading-7 text-neutral-content/75 sm:text-lg">
+              Create an account to upload, manage, and share your AI character cards.
+            </p>
+          } @else {
+            <h1 class="text-4xl font-black tracking-tight sm:text-5xl">Welcome back</h1>
+            <p class="max-w-lg text-base leading-7 text-neutral-content/75 sm:text-lg">
+              Sign in with a secure magic link or your email and password, and pick up exactly where
+              you left off.
+            </p>
+          }
         </div>
       </div>
 
@@ -35,11 +42,20 @@
     <div class="card w-full max-w-xl border border-base-300 bg-base-100 shadow-xl">
       <div class="card-body gap-6 p-6 sm:p-8">
         <div class="space-y-2">
-          <p class="text-sm font-semibold uppercase tracking-[0.2em] text-primary">Login</p>
-          <h2 class="text-3xl font-bold text-base-content">Sign in to your account</h2>
-          <p class="text-sm leading-6 text-base-content/70">
-            Enter your email to receive a secure magic link, or use your password instead.
-          </p>
+          @if (isRegisterMode) {
+            <p class="text-sm font-semibold uppercase tracking-[0.2em] text-primary">Register</p>
+            <h2 class="text-3xl font-bold text-base-content">Create your account</h2>
+            <p class="text-sm leading-6 text-base-content/70">
+              Sign up with your email and a password. We will send a confirmation link to verify
+              your address.
+            </p>
+          } @else {
+            <p class="text-sm font-semibold uppercase tracking-[0.2em] text-primary">Login</p>
+            <h2 class="text-3xl font-bold text-base-content">Sign in to your account</h2>
+            <p class="text-sm leading-6 text-base-content/70">
+              Enter your email to receive a secure magic link, or use your password instead.
+            </p>
+          }
         </div>
 
         <div aria-live="polite" class="space-y-3">
@@ -56,11 +72,131 @@
           }
         </div>
 
-        <form [formGroup]="signInForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-6" novalidate>
-          <label class="form-control w-full">
-            <div class="label px-0 pb-2">
-              <span class="label-text text-sm font-medium text-base-content">Email address</span>
-            </div>
+        @if (isRegisterMode) {
+          <form
+            [formGroup]="registerForm"
+            (ngSubmit)="onSubmit()"
+            class="flex flex-col gap-6"
+            novalidate
+          >
+            <label class="form-control w-full">
+              <div class="label px-0 pb-2">
+                <span class="label-text text-sm font-medium text-base-content">Email address</span>
+              </div>
+              <input
+                id="register-email"
+                formControlName="email"
+                class="input input-bordered input-lg w-full"
+                type="email"
+                placeholder="you@company.com"
+                autocomplete="email"
+                [attr.aria-invalid]="showRegisterEmailError"
+                [attr.aria-describedby]="showRegisterEmailError ? 'register-email-error' : null"
+              />
+              @if (showRegisterEmailError) {
+                <div class="label px-0 pt-2">
+                  <span id="register-email-error" class="label-text-alt text-error">
+                    @if (registerEmail.hasError('required')) {
+                      Email is required.
+                    } @else {
+                      Enter a valid email address.
+                    }
+                  </span>
+                </div>
+              }
+            </label>
+
+            <label class="form-control w-full">
+              <div class="label px-0 pb-2">
+                <span class="label-text text-sm font-medium text-base-content">Password</span>
+              </div>
+              <input
+                id="register-password"
+                formControlName="password"
+                class="input input-bordered input-lg w-full"
+                type="password"
+                placeholder="Create a password"
+                autocomplete="new-password"
+                [attr.aria-invalid]="showRegisterPasswordError"
+                [attr.aria-describedby]="
+                  showRegisterPasswordError ? 'register-password-error' : 'register-password-hint'
+                "
+              />
+              @if (showRegisterPasswordError) {
+                <div class="label px-0 pt-2">
+                  <span id="register-password-error" class="label-text-alt text-error">
+                    @if (registerPassword.hasError('required')) {
+                      Password is required.
+                    } @else {
+                      Use at least {{ minPasswordLength }} characters.
+                    }
+                  </span>
+                </div>
+              } @else {
+                <div class="label px-0 pt-2">
+                  <span id="register-password-hint" class="label-text-alt text-base-content/60">
+                    At least {{ minPasswordLength }} characters.
+                  </span>
+                </div>
+              }
+            </label>
+
+            <label class="form-control w-full">
+              <div class="label px-0 pb-2">
+                <span class="label-text text-sm font-medium text-base-content">
+                  Confirm password
+                </span>
+              </div>
+              <input
+                id="register-confirm-password"
+                formControlName="confirmPassword"
+                class="input input-bordered input-lg w-full"
+                type="password"
+                placeholder="Re-enter your password"
+                autocomplete="new-password"
+                [attr.aria-invalid]="showConfirmError"
+                [attr.aria-describedby]="showConfirmError ? 'register-confirm-error' : null"
+              />
+              @if (showConfirmError) {
+                <div class="label px-0 pt-2">
+                  <span id="register-confirm-error" class="label-text-alt text-error">
+                    @if (registerConfirm.hasError('required')) {
+                      Please confirm your password.
+                    } @else {
+                      Passwords do not match.
+                    }
+                  </span>
+                </div>
+              }
+            </label>
+
+            <button type="submit" class="btn btn-primary btn-lg w-full" [disabled]="loading()">
+              @if (loading()) {
+                <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
+                Creating account...
+              } @else {
+                Create account
+              }
+            </button>
+          </form>
+
+          <div class="divider my-0 text-xs text-base-content/50">Email confirmation required</div>
+
+          <div class="rounded-2xl bg-base-200 p-4 text-sm leading-6 text-base-content/70">
+            After signing up, open the confirmation link we email you to activate your account and
+            sign in.
+          </div>
+        } @else {
+          <form
+            [formGroup]="signInForm"
+            (ngSubmit)="onSubmit()"
+            class="flex flex-col gap-6"
+            novalidate
+          >
+            <label class="form-control w-full">
+              <div class="label px-0 pb-2">
+                <span class="label-text text-sm font-medium text-base-content">Email address</span>
+              </div>
             <input
               id="email"
               formControlName="email"
@@ -156,14 +292,37 @@
           <div class="rounded-2xl bg-base-200 p-4 text-sm leading-6 text-base-content/70">
             Prefer a one-time link? Use the magic link option above for passwordless sign-in.
           </div>
-        } @else {
-          <div class="divider my-0 text-xs text-base-content/50">Secure, passwordless access</div>
+          } @else {
+            <div class="divider my-0 text-xs text-base-content/50">Secure, passwordless access</div>
 
-          <div class="rounded-2xl bg-base-200 p-4 text-sm leading-6 text-base-content/70">
-            The link opens a verified session for this email only. If you do not see the message
-            within a minute, check spam or request a fresh link.
-          </div>
+            <div class="rounded-2xl bg-base-200 p-4 text-sm leading-6 text-base-content/70">
+              The link opens a verified session for this email only. If you do not see the message
+              within a minute, check spam or request a fresh link.
+            </div>
+          }
         }
+
+        <p class="text-center text-sm text-base-content/70">
+          @if (isRegisterMode) {
+            Already have an account?
+            <button
+              type="button"
+              class="link link-primary font-medium"
+              (click)="setMode('sign-in')"
+            >
+              Sign in
+            </button>
+          } @else {
+            New to Charchive?
+            <button
+              type="button"
+              class="link link-primary font-medium"
+              (click)="setMode('register')"
+            >
+              Create an account
+            </button>
+          }
+        </p>
       </div>
     </div>
   </div>

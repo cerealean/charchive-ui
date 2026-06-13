@@ -11,13 +11,15 @@ describe('LoginComponent', () => {
   let signInCalls = 0;
   let passwordCalls: { email: string; password: string }[] = [];
   let passwordError: Error | null = null;
+  let signUpCalls: { email: string; password: string }[] = [];
   let navigatedTo: string | null = null;
-  let authService: Pick<AuthService, 'signIn' | 'signInWithPassword'>;
+  let authService: Pick<AuthService, 'signIn' | 'signInWithPassword' | 'signUp'>;
 
   beforeEach(async () => {
     signInCalls = 0;
     passwordCalls = [];
     passwordError = null;
+    signUpCalls = [];
     navigatedTo = null;
 
     authService = {
@@ -38,6 +40,13 @@ describe('LoginComponent', () => {
           error: passwordError,
         };
       }) as AuthService['signInWithPassword'],
+      signUp: (async (email: string, password: string) => {
+        signUpCalls.push({ email, password });
+        return {
+          data: { user: null, session: null },
+          error: null,
+        };
+      }) as AuthService['signUp'],
     };
 
     const routerStub = {
@@ -137,6 +146,51 @@ describe('LoginComponent', () => {
     fixture.detectChanges();
 
     expect(component.errorMessage()).toBe('Invalid login credentials');
+    expect(navigatedTo).toBeNull();
+  });
+
+  it('switches to the registration form when "Create an account" is chosen', () => {
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('#register-email'))).toBeNull();
+
+    component.setMode('register');
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('#register-email'))).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('#register-confirm-password'))).toBeTruthy();
+  });
+
+  it('does not register when the passwords do not match', async () => {
+    fixture.detectChanges();
+    component.setMode('register');
+    component.registerEmail.setValue('new@example.com');
+    component.registerPassword.setValue('s3cret-pass');
+    component.registerConfirm.setValue('different-pass');
+    fixture.detectChanges();
+
+    await component.register();
+    fixture.detectChanges();
+
+    const errorText =
+      fixture.debugElement.query(By.css('#register-confirm-error'))?.nativeElement.textContent;
+
+    expect(errorText).toContain('Passwords do not match.');
+    expect(signUpCalls.length).toBe(0);
+  });
+
+  it('registers and shows a confirmation message when the form is valid', async () => {
+    fixture.detectChanges();
+    component.setMode('register');
+    component.registerEmail.setValue('new@example.com');
+    component.registerPassword.setValue('s3cret-pass');
+    component.registerConfirm.setValue('s3cret-pass');
+
+    await component.register();
+    fixture.detectChanges();
+
+    expect(signUpCalls).toEqual([{ email: 'new@example.com', password: 's3cret-pass' }]);
+    expect(component.successMessage()).toContain('Check your email');
     expect(navigatedTo).toBeNull();
   });
 });
