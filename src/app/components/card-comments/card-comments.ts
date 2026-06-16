@@ -64,7 +64,9 @@ export class CardCommentsComponent {
   private readonly currentUserAvatarUrl = signal<string | null>(null);
   private avatarObjectUrls: string[] = [];
 
-  protected readonly commentCount = computed(() => this.comments().length);
+  protected readonly commentCount = computed(
+    () => this.comments().filter((comment) => !comment.isDeleted).length,
+  );
   protected readonly canComment = computed(() => this.currentUserId() !== null);
   protected readonly remainingChars = computed(() => this.maxLength - this.bodyLength());
 
@@ -90,7 +92,7 @@ export class CardCommentsComponent {
         )
         .map((comment) => ({
           ...comment,
-          canReply: loggedIn && comment.depth < this.maxReplyDepth,
+          canReply: loggedIn && !comment.isDeleted && comment.depth < this.maxReplyDepth,
           children: build(comment.id, false),
         }));
 
@@ -197,22 +199,38 @@ export class CardCommentsComponent {
     this.deletingId.set(commentId);
     this.postError.set('');
 
-    const { error } = await this.cardsService.deleteComment(commentId);
+    try {
+      const { action, removedIds } = await this.cardsService.deleteComment(commentId);
 
-    if (error) {
-      this.postError.set('Unable to delete this comment. Please try again.');
-    } else {
-      // The database cascades the delete to replies; mirror that in the UI so the
-      // count and thread stay accurate.
-      const removed = this.collectCommentAndDescendantIds(commentId);
-      this.comments.update((current) => current.filter((comment) => !removed.has(comment.id)));
+      if (action === 'soft') {
+        // Keep the row as a tombstone so its replies stay in the thread.
+        this.comments.update((current) =>
+          current.map((comment) =>
+            comment.id === commentId
+              ? { ...comment, isDeleted: true, edited: false, body: '' }
+              : comment,
+          ),
+        );
+      } else {
+        // The leaf (and any now-childless tombstone ancestors) were removed.
+        const removed = new Set(removedIds.length > 0 ? removedIds : [commentId]);
+        this.comments.update((current) => current.filter((comment) => !removed.has(comment.id)));
+      }
 
-      if (this.replyingToId() && removed.has(this.replyingToId() as string)) {
+      if (this.replyingToId() === commentId) {
         this.cancelReply();
       }
-    }
 
-    this.deletingId.set(null);
+      if (this.editingId() === commentId) {
+        this.cancelEdit();
+      }
+    } catch (error) {
+      this.postError.set(
+        error instanceof Error ? error.message : 'Unable to delete this comment. Please try again.',
+      );
+    } finally {
+      this.deletingId.set(null);
+    }
   }
 
   protected startReply(comment: CardCommentViewModel): void {
@@ -264,32 +282,6 @@ export class CardCommentsComponent {
     } finally {
       this.replySaving.set(false);
     }
-  }
-
-  private collectCommentAndDescendantIds(rootId: string): Set<string> {
-    const childrenByParent = new Map<string | null, string[]>();
-
-    for (const comment of this.comments()) {
-      const siblings = childrenByParent.get(comment.parentId) ?? [];
-      siblings.push(comment.id);
-      childrenByParent.set(comment.parentId, siblings);
-    }
-
-    const removed = new Set<string>();
-    const stack = [rootId];
-
-    while (stack.length > 0) {
-      const id = stack.pop() as string;
-
-      if (removed.has(id)) {
-        continue;
-      }
-
-      removed.add(id);
-      stack.push(...(childrenByParent.get(id) ?? []));
-    }
-
-    return removed;
   }
 
   protected startEdit(comment: CardCommentViewModel): void {
@@ -490,8 +482,9 @@ export class CardCommentsComponent {
       body: record.body,
       createdAtIso: record.created_at,
       createdAgo: this.formatRelativeTime(record.created_at),
-      edited: record.updated_at !== record.created_at,
+      edited: record.deleted_at === null && record.updated_at !== record.created_at,
       isOwn,
+      isDeleted: record.deleted_at !== null,
     };
   }
 

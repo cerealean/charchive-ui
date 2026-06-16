@@ -70,6 +70,26 @@
   <ng-template #commentTemplate let-comment>
     <li>
       <div class="rounded-xl border border-base-300 bg-base-100 p-3">
+        @if (comment.isDeleted) {
+          <div class="flex items-center gap-3">
+            <div
+              class="grid size-8 shrink-0 place-items-center rounded-full bg-base-300 text-base-content/40"
+              aria-hidden="true"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                class="size-4"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14" />
+              </svg>
+            </div>
+            <p class="text-sm italic text-base-content/50">This comment has been deleted</p>
+          </div>
+        } @else {
         <div class="flex gap-3">
           @if (comment.avatarUrl) {
             <img
@@ -225,6 +245,7 @@
             }
           </div>
         </div>
+        }
       </div>
 
       @if (comment.children.length > 0) {

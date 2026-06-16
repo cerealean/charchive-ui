@@ -165,7 +165,7 @@ export class CardService {
   commentsForCard(cardId: string) {
     return this.supabase.client
       .from('card_comments')
-      .select('id, author_id, parent_comment_id, depth, body, created_at, updated_at')
+      .select('id, author_id, parent_comment_id, depth, body, created_at, updated_at, deleted_at')
       .eq('card_id', cardId)
       .order('created_at', { ascending: false })
       .returns<CardCommentRecord[]>();
@@ -191,7 +191,7 @@ export class CardService {
         parent_comment_id: parentCommentId,
         body: validation.value,
       })
-      .select('id, author_id, parent_comment_id, depth, body, created_at, updated_at')
+      .select('id, author_id, parent_comment_id, depth, body, created_at, updated_at, deleted_at')
       .single<CardCommentRecord>();
 
     if (error) {
@@ -212,7 +212,7 @@ export class CardService {
       .from('card_comments')
       .update({ body: validation.value })
       .eq('id', commentId)
-      .select('id, author_id, parent_comment_id, depth, body, created_at, updated_at')
+      .select('id, author_id, parent_comment_id, depth, body, created_at, updated_at, deleted_at')
       .single<CardCommentRecord>();
 
     if (error) {
@@ -222,8 +222,21 @@ export class CardService {
     return data;
   }
 
-  deleteComment(commentId: string) {
-    return this.supabase.client.from('card_comments').delete().eq('id', commentId);
+  async deleteComment(
+    commentId: string,
+  ): Promise<{ action: 'soft' | 'hard' | 'none'; removedIds: string[] }> {
+    const { data, error } = await this.supabase.client.rpc('delete_card_comment', {
+      p_comment_id: commentId,
+    });
+
+    if (error) {
+      throw this.normalizeCommentError(error);
+    }
+
+    const result = (data ?? {}) as { action?: string; removed_ids?: string[] };
+    const action = result.action === 'soft' || result.action === 'hard' ? result.action : 'none';
+
+    return { action, removedIds: result.removed_ids ?? [] };
   }
 
   private normalizeCommentError(error: unknown): Error {

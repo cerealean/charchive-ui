@@ -9,4 +9,5 @@ export interface CardCommentViewModel {
   createdAgo: string;
   edited: boolean;
   isOwn: boolean;
+  isDeleted: boolean;
 }
