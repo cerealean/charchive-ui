@@ -1,3 +1,38 @@
 :host {
   display: block;
 }
+
+/* Thread connector lines. Drawn with base-content (light on a dark theme) at low
+   opacity rather than a dark border color. */
+.comment-replies > li {
+  position: relative;
+}
+
+/* Vertical spine: bridges up to the parent / previous sibling and down to the next
+   sibling. The last reply stops its spine at the elbow so the line does not dangle
+   past the final reply. */
+.comment-replies > li::before {
+  content: '';
+  position: absolute;
+  left: calc(-1rem - 2px);
+  top: -0.75rem;
+  bottom: 0;
+  width: 2px;
+  background-color: color-mix(in oklab, var(--color-base-content) 30%, transparent);
+}
+
+.comment-replies > li:last-child::before {
+  bottom: auto;
+  height: 2.5rem;
+}
+
+/* Horizontal elbow from the spine to each reply card, aligned with the avatar. */
+.comment-replies > li::after {
+  content: '';
+  position: absolute;
+  left: calc(-1rem - 2px);
+  top: 1.75rem;
+  width: 1rem;
+  height: 2px;
+  background-color: color-mix(in oklab, var(--color-base-content) 30%, transparent);
+}

@@ -9,6 +9,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -20,12 +21,14 @@ import { CardService } from '../../services/card';
 import { ProfileService } from '../../services/profile';
 import { MAX_COMMENT_LENGTH, commentContentValidator } from '../../shared/comment-validation';
 
+type CommentNode = CardCommentViewModel & { canReply: boolean; children: CommentNode[] };
+
 @Component({
   selector: 'app-card-comments',
   templateUrl: './card-comments.html',
   styleUrl: './card-comments.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, NgTemplateOutlet],
 })
 export class CardCommentsComponent {
   private readonly destroyRef = inject(DestroyRef);
@@ -38,7 +41,7 @@ export class CardCommentsComponent {
   readonly cardId = input.required<string>();
 
   protected readonly maxLength = MAX_COMMENT_LENGTH;
-  protected readonly maxReplyDepth = 3;
+  protected readonly maxReplyDepth = 6;
 
   protected readonly comments = signal<readonly CardCommentViewModel[]>([]);
   protected readonly loading = signal(false);
@@ -65,10 +68,10 @@ export class CardCommentsComponent {
   protected readonly canComment = computed(() => this.currentUserId() !== null);
   protected readonly remainingChars = computed(() => this.maxLength - this.bodyLength());
 
-  // Flattens the comments into depth-first thread order: top-level comments newest
-  // first, replies oldest first beneath their parent. `canReply` depends on the
-  // current user and depth, so it is derived here where the signal is read.
-  protected readonly thread = computed(() => {
+  // Builds the comment tree: top-level comments newest first, replies oldest first
+  // beneath their parent. `canReply` depends on the current user and depth, so it
+  // is derived here where the signal is read.
+  protected readonly thread = computed<CommentNode[]>(() => {
     const loggedIn = this.currentUserId() !== null;
     const childrenByParent = new Map<string | null, CardCommentViewModel[]>();
 
@@ -78,26 +81,20 @@ export class CardCommentsComponent {
       childrenByParent.set(comment.parentId, siblings);
     }
 
-    const ordered: (CardCommentViewModel & { canReply: boolean })[] = [];
-
-    const visit = (parentId: string | null, newestFirst: boolean): void => {
-      const siblings = [...(childrenByParent.get(parentId) ?? [])].sort((a, b) =>
-        newestFirst
-          ? b.createdAtIso.localeCompare(a.createdAtIso)
-          : a.createdAtIso.localeCompare(b.createdAtIso),
-      );
-
-      for (const comment of siblings) {
-        ordered.push({
+    const build = (parentId: string | null, newestFirst: boolean): CommentNode[] =>
+      [...(childrenByParent.get(parentId) ?? [])]
+        .sort((a, b) =>
+          newestFirst
+            ? b.createdAtIso.localeCompare(a.createdAtIso)
+            : a.createdAtIso.localeCompare(b.createdAtIso),
+        )
+        .map((comment) => ({
           ...comment,
           canReply: loggedIn && comment.depth < this.maxReplyDepth,
-        });
-        visit(comment.id, false);
-      }
-    };
+          children: build(comment.id, false),
+        }));
 
-    visit(null, true);
-    return ordered;
+    return build(null, true);
   });
 
   protected readonly body = new FormControl('', {
