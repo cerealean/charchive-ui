@@ -79,7 +79,11 @@ export class AvatarComponent {
       const fileExt = this.resolveFileExtension(file);
       const filePath = `${crypto.randomUUID()}.${fileExt}`;
 
-      await this.profiles.uploadAvatar(filePath, file);
+      const { error } = await this.profiles.uploadAvatar(filePath, file);
+      if (error) {
+        throw error;
+      }
+
       this.upload.emit(filePath);
     } catch (error) {
       this.errorMessage = error instanceof Error ? error.message : 'Unable to upload your image.';
