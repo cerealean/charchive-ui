@@ -5,13 +5,13 @@
   </h2>
 
   @if (canComment()) {
-    <form class="mt-4 space-y-2" (ngSubmit)="submit()">
+    <form class="mt-4 space-y-2" [formGroup]="form" (ngSubmit)="submit()">
       <label class="form-control">
         <span class="sr-only">Add a comment</span>
         <textarea
           class="textarea textarea-bordered min-h-24 w-full"
           [class.textarea-error]="clientError()"
-          [formControl]="form"
+          formControlName="body"
           [attr.maxlength]="maxLength"
           [attr.aria-invalid]="clientError() ? 'true' : null"
           aria-describedby="comment-counter comment-error"

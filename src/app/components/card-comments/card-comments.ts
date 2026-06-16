@@ -9,7 +9,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { ReactiveFormsModule, FormControl, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
@@ -54,7 +54,7 @@ export class CardCommentsComponent {
   protected readonly canComment = computed(() => this.currentUserId() !== null);
   protected readonly remainingChars = computed(() => this.maxLength - this.bodyLength());
 
-  protected readonly form = new FormControl('', {
+  protected readonly body = new FormControl('', {
     nonNullable: true,
     validators: [
       Validators.required,
@@ -63,16 +63,18 @@ export class CardCommentsComponent {
     ],
   });
 
+  protected readonly form = new FormGroup({ body: this.body });
+
   constructor() {
     effect(() => {
       const cardId = this.cardId();
       untracked(() => void this.loadComments(cardId));
     });
 
-    this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
+    this.body.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
       this.bodyLength.set(value.length);
       this.postError.set('');
-      this.clientError.set(this.form.dirty ? this.describeControlError() : '');
+      this.clientError.set(this.body.dirty ? this.describeControlError() : '');
     });
   }
 
@@ -84,7 +86,7 @@ export class CardCommentsComponent {
       return;
     }
 
-    this.form.markAsDirty();
+    this.body.markAsDirty();
 
     if (this.form.invalid) {
       this.clientError.set(this.describeControlError());
@@ -95,9 +97,9 @@ export class CardCommentsComponent {
     this.postError.set('');
 
     try {
-      const record = await this.cardsService.addComment(cardId, userId, this.form.value);
+      const record = await this.cardsService.addComment(cardId, userId, this.body.value);
       this.comments.update((current) => [this.toViewModel(record, 'You', true), ...current]);
-      this.form.reset('');
+      this.form.reset();
       this.bodyLength.set(0);
       this.clientError.set('');
     } catch (error) {
@@ -138,7 +140,7 @@ export class CardCommentsComponent {
     this.comments.set([]);
     this.loadError.set('');
     this.postError.set('');
-    this.form.reset('');
+    this.form.reset();
     this.bodyLength.set(0);
     this.clientError.set('');
 
@@ -216,7 +218,7 @@ export class CardCommentsComponent {
   }
 
   private describeControlError(): string {
-    const errors = this.form.errors;
+    const errors = this.body.errors;
 
     if (!errors) {
       return '';
