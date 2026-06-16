@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { existsSync } from 'node:fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,21 +24,42 @@ function runSupabase(args, label) {
   return result.stdout ?? '';
 }
 
-function extractJsonArray(mixedOutput) {
-  const start = mixedOutput.indexOf('[');
-  const end = mixedOutput.lastIndexOf(']');
+function extractJson(mixedOutput, open, close) {
+  const start = mixedOutput.indexOf(open);
+  const end = mixedOutput.lastIndexOf(close);
 
   if (start === -1 || end === -1 || end <= start) {
-    return [];
+    return null;
   }
 
-  const candidate = mixedOutput.slice(start, end + 1);
   try {
-    const parsed = JSON.parse(candidate);
-    return Array.isArray(parsed) ? parsed : [];
+    return JSON.parse(mixedOutput.slice(start, end + 1));
   } catch {
-    return [];
+    return null;
   }
+}
+
+// Resolve the local Storage endpoint and key. Uploading via the Storage REST API
+// with the local service_role key works entirely offline; unlike
+// `supabase storage cp`, it does not require a cloud access token / login.
+function localStorageConfig() {
+  const apiUrl = process.env.SUPABASE_API_URL?.trim();
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+
+  if (apiUrl && serviceKey) {
+    return { apiUrl, serviceKey };
+  }
+
+  const status = extractJson(
+    runSupabase(['status', '-o', 'json'], 'Read Supabase status'),
+    '{',
+    '}',
+  );
+
+  return {
+    apiUrl: apiUrl || status?.API_URL,
+    serviceKey: serviceKey || status?.SERVICE_ROLE_KEY,
+  };
 }
 
 function loadCardFileRows() {
@@ -49,56 +70,76 @@ function loadCardFileRows() {
       '--local',
       '--output-format',
       'json',
-      "select bucket_id, storage_path, original_filename from public.card_files where bucket_id = 'card-files' and mime_type = 'image/png' and original_filename is not null order by created_at;",
+      "select bucket_id, storage_path, original_filename, mime_type from public.card_files where bucket_id = 'card-files' and original_filename is not null order by created_at;",
     ],
     'Load card file rows',
   );
 
-  return extractJsonArray(output);
+  return extractJson(output, '[', ']') ?? [];
 }
 
-function uploadFiles(rows) {
+async function uploadFiles(rows, config) {
   let uploaded = 0;
+  let skipped = 0;
 
   for (const row of rows) {
-    const originalFileName = row.original_filename;
-    const storagePath = row.storage_path;
-    const bucketId = row.bucket_id;
+    const {
+      original_filename: originalFileName,
+      storage_path: storagePath,
+      bucket_id: bucketId,
+    } = row;
 
     if (!originalFileName || !storagePath || !bucketId) {
       continue;
     }
 
     const sourcePath = path.join(imagesDir, originalFileName);
+
     if (!existsSync(sourcePath)) {
+      skipped += 1;
       continue;
     }
 
-    const relativeSourcePath = path.relative(repoRoot, sourcePath).split(path.sep).join('/');
+    const response = await fetch(`${config.apiUrl}/storage/v1/object/${bucketId}/${storagePath}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${config.serviceKey}`,
+        'Content-Type': row.mime_type || 'application/octet-stream',
+        // Overwrite if the object already exists so the script is re-runnable.
+        'x-upsert': 'true',
+      },
+      body: readFileSync(sourcePath),
+    });
 
-    runSupabase(
-      [
-        '--experimental',
-        'storage',
-        'cp',
-        '--local',
-        '--content-type',
-        'image/png',
-        relativeSourcePath,
-        `ss:///${bucketId}/${storagePath}`,
-      ],
-      `Upload ${originalFileName}`,
-    );
+    if (!response.ok) {
+      const details = await response.text().catch(() => '');
+      throw new Error(`Upload ${storagePath} failed: HTTP ${response.status} ${details}`);
+    }
+
     uploaded += 1;
   }
 
-  return uploaded;
+  return { uploaded, skipped };
 }
 
-function main() {
+async function main() {
+  const config = localStorageConfig();
+
+  if (!config.apiUrl || !config.serviceKey) {
+    throw new Error(
+      'Could not determine the local Supabase API URL / service role key. Is `supabase start` running?',
+    );
+  }
+
   const rows = loadCardFileRows();
-  const uploaded = uploadFiles(rows);
-  console.log(`Seeded storage bucket card-files with ${uploaded} object(s).`);
+  const { uploaded, skipped } = await uploadFiles(rows, config);
+
+  const skippedNote =
+    skipped > 0 ? ` (skipped ${skipped} row(s) with no matching source image)` : '';
+  console.log(`Seeded storage bucket card-files with ${uploaded} object(s)${skippedNote}.`);
 }
 
-main();
+main().catch((error) => {
+  console.error(error instanceof Error ? error.message : error);
+  process.exitCode = 1;
+});
