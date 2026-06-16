@@ -62,30 +62,55 @@
       <ul class="space-y-3">
         @for (comment of comments(); track comment.id) {
           <li class="rounded-xl border border-base-300 bg-base-100 p-3">
-            <div class="flex flex-wrap items-baseline justify-between gap-2">
-              <div class="flex items-baseline gap-2">
-                <span class="text-sm font-semibold text-base-content">{{ comment.authorName }}</span>
-                <span class="text-xs text-base-content/60">
-                  <time [attr.datetime]="comment.createdAtIso">{{ comment.createdAgo }}</time>
-                </span>
-              </div>
-
-              @if (comment.isOwn) {
-                <button
-                  type="button"
-                  class="btn btn-ghost btn-xs text-error"
-                  [disabled]="deletingId() === comment.id"
-                  [attr.aria-label]="'Delete your comment posted ' + comment.createdAgo"
-                  (click)="deleteComment(comment.id)"
+            <div class="flex gap-3">
+              @if (comment.avatarUrl) {
+                <img
+                  [src]="comment.avatarUrl"
+                  alt=""
+                  width="32"
+                  height="32"
+                  class="size-8 shrink-0 rounded-full object-cover"
+                />
+              } @else {
+                <div
+                  class="grid size-8 shrink-0 place-items-center rounded-full bg-neutral text-xs font-semibold uppercase text-neutral-content"
+                  aria-hidden="true"
                 >
-                  {{ deletingId() === comment.id ? 'Deleting...' : 'Delete' }}
-                </button>
+                  {{ comment.authorName.charAt(0) }}
+                </div>
               }
-            </div>
 
-            <p class="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-base-content/85">
-              {{ comment.body }}
-            </p>
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-baseline justify-between gap-2">
+                  <div class="flex items-baseline gap-2">
+                    <span class="text-sm font-semibold text-base-content">
+                      {{ comment.authorName }}
+                    </span>
+                    <span class="text-xs text-base-content/60">
+                      <time [attr.datetime]="comment.createdAtIso">{{ comment.createdAgo }}</time>
+                    </span>
+                  </div>
+
+                  @if (comment.isOwn) {
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-xs text-error"
+                      [disabled]="deletingId() === comment.id"
+                      [attr.aria-label]="'Delete your comment posted ' + comment.createdAgo"
+                      (click)="deleteComment(comment.id)"
+                    >
+                      {{ deletingId() === comment.id ? 'Deleting...' : 'Delete' }}
+                    </button>
+                  }
+                </div>
+
+                <p
+                  class="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-base-content/85"
+                >
+                  {{ comment.body }}
+                </p>
+              </div>
+            </div>
           </li>
         }
       </ul>

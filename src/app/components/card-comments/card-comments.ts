@@ -49,6 +49,8 @@ export class CardCommentsComponent {
   protected readonly clientError = signal('');
 
   private readonly currentUserId = signal<string | null>(null);
+  private readonly currentUserAvatarUrl = signal<string | null>(null);
+  private avatarObjectUrls: string[] = [];
 
   protected readonly commentCount = computed(() => this.comments().length);
   protected readonly canComment = computed(() => this.currentUserId() !== null);
@@ -66,6 +68,8 @@ export class CardCommentsComponent {
   protected readonly form = new FormGroup({ body: this.body });
 
   constructor() {
+    this.destroyRef.onDestroy(() => this.revokeAvatarObjectUrls());
+
     effect(() => {
       const cardId = this.cardId();
       untracked(() => void this.loadComments(cardId));
@@ -98,7 +102,10 @@ export class CardCommentsComponent {
 
     try {
       const record = await this.cardsService.addComment(cardId, userId, this.body.value);
-      this.comments.update((current) => [this.toViewModel(record, 'You', true), ...current]);
+      this.comments.update((current) => [
+        this.toViewModel(record, 'You', this.currentUserAvatarUrl(), true),
+        ...current,
+      ]);
       this.form.reset();
       this.bodyLength.set(0);
       this.clientError.set('');
@@ -143,6 +150,8 @@ export class CardCommentsComponent {
     this.form.reset();
     this.bodyLength.set(0);
     this.clientError.set('');
+    this.revokeAvatarObjectUrls();
+    this.currentUserAvatarUrl.set(null);
 
     if (!cardId) {
       return;
@@ -161,13 +170,16 @@ export class CardCommentsComponent {
       }
 
       const rows = comments ?? [];
-      const usernameById = await this.resolveAuthorNames(rows);
+      const authors = await this.resolveAuthorProfiles(rows, user?.id ?? null);
+
+      this.currentUserAvatarUrl.set(user ? (authors.avatarById.get(user.id) ?? null) : null);
 
       this.comments.set(
         rows.map((row) =>
           this.toViewModel(
             row,
-            usernameById.get(row.author_id) ?? 'Unknown user',
+            authors.nameById.get(row.author_id) ?? 'Unknown user',
+            authors.avatarById.get(row.author_id) ?? null,
             row.author_id === user?.id,
           ),
         ),
@@ -182,34 +194,86 @@ export class CardCommentsComponent {
     }
   }
 
-  private async resolveAuthorNames(
+  private async resolveAuthorProfiles(
     rows: readonly CardCommentRecord[],
-  ): Promise<Map<string, string>> {
-    const authorIds = Array.from(new Set(rows.map((row) => row.author_id)));
+    currentUserId: string | null,
+  ): Promise<{ nameById: Map<string, string>; avatarById: Map<string, string> }> {
+    const authorIds = new Set(rows.map((row) => row.author_id));
 
-    if (authorIds.length === 0) {
-      return new Map();
+    if (currentUserId) {
+      authorIds.add(currentUserId);
     }
 
-    const { data: profiles, error } = await this.profiles.profilesByIds(authorIds);
+    const nameById = new Map<string, string>();
+    const avatarById = new Map<string, string>();
+
+    if (authorIds.size === 0) {
+      return { nameById, avatarById };
+    }
+
+    const { data: profiles, error } = await this.profiles.profilesByIds([...authorIds]);
 
     if (error) {
-      return new Map();
+      return { nameById, avatarById };
     }
 
-    return new Map(
-      (profiles ?? []).map((profile) => [profile.id, profile.username?.trim() || 'Unknown user']),
+    const resolved = await Promise.all(
+      (profiles ?? []).map(async (profile) => ({
+        id: profile.id,
+        name: profile.username?.trim() || 'Unknown user',
+        avatarUrl: await this.resolveAvatarObjectUrl(profile.avatar_url),
+      })),
     );
+
+    for (const profile of resolved) {
+      nameById.set(profile.id, profile.name);
+
+      if (profile.avatarUrl) {
+        avatarById.set(profile.id, profile.avatarUrl);
+      }
+    }
+
+    return { nameById, avatarById };
+  }
+
+  private async resolveAvatarObjectUrl(path: string | null | undefined): Promise<string | null> {
+    if (!path) {
+      return null;
+    }
+
+    try {
+      const { data } = await this.profiles.downloadImage(path);
+
+      if (data instanceof Blob) {
+        const objectUrl = URL.createObjectURL(data);
+        this.avatarObjectUrls.push(objectUrl);
+        return objectUrl;
+      }
+    } catch {
+      // Avatar is optional; fall back to the placeholder on any download failure.
+    }
+
+    return null;
+  }
+
+  private revokeAvatarObjectUrls(): void {
+    for (const objectUrl of this.avatarObjectUrls) {
+      URL.revokeObjectURL(objectUrl);
+    }
+
+    this.avatarObjectUrls = [];
   }
 
   private toViewModel(
     record: CardCommentRecord,
     authorName: string,
+    avatarUrl: string | null,
     isOwn: boolean,
   ): CardCommentViewModel {
     return {
       id: record.id,
       authorName,
+      avatarUrl,
       body: record.body,
       createdAtIso: record.created_at,
       createdAgo: this.formatRelativeTime(record.created_at),

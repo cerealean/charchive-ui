@@ -27,7 +27,7 @@ export class ProfileService {
   }
 
   profilesByIds(userIds: readonly string[]) {
-    return this.supabase.client.from('profiles').select('id, username').in('id', userIds);
+    return this.supabase.client.from('profiles').select('id, username, avatar_url').in('id', userIds);
   }
 
   updateProfile(profile: Profile) {
