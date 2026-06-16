@@ -139,6 +139,24 @@ export class CardService {
       .eq('user_id', userId);
   }
 
+  async likedCardIds(cardIds: readonly string[], userId: string): Promise<Set<string>> {
+    if (cardIds.length === 0) {
+      return new Set();
+    }
+
+    const { data, error } = await this.supabase.client
+      .from('card_likes')
+      .select('card_id')
+      .eq('user_id', userId)
+      .in('card_id', [...cardIds]);
+
+    if (error) {
+      throw error;
+    }
+
+    return new Set((data ?? []).map((row) => row.card_id as string));
+  }
+
   publicCardsPage(page: number, pageSize: number) {
     const safePage = Math.max(1, Math.trunc(page));
     const safePageSize = Math.max(1, Math.trunc(pageSize));

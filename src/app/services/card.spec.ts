@@ -15,6 +15,7 @@ describe('CardService', () => {
   let upsertSpy: Mock;
   let deleteSpy: Mock;
   let maybeSingleSpy: Mock;
+  let inSpy: Mock;
 
   beforeEach(() => {
     const queryBuilder = {
@@ -26,6 +27,7 @@ describe('CardService', () => {
       upsert: vi.fn(),
       delete: vi.fn(),
       maybeSingle: vi.fn(),
+      in: vi.fn(),
     };
 
     queryBuilder.select.mockReturnValue(queryBuilder);
@@ -36,6 +38,7 @@ describe('CardService', () => {
     queryBuilder.upsert.mockReturnValue({ data: null, error: null });
     queryBuilder.delete.mockReturnValue(queryBuilder);
     queryBuilder.maybeSingle.mockResolvedValue({ data: null, error: null });
+    queryBuilder.in.mockResolvedValue({ data: [], error: null });
 
     const client = {
       from: vi.fn().mockReturnValue(queryBuilder),
@@ -54,6 +57,7 @@ describe('CardService', () => {
     upsertSpy = queryBuilder.upsert;
     deleteSpy = queryBuilder.delete;
     maybeSingleSpy = queryBuilder.maybeSingle;
+    inSpy = queryBuilder.in;
 
     TestBed.configureTestingModule({
       providers: [{ provide: SupabaseService, useValue: { client } }],
@@ -123,5 +127,33 @@ describe('CardService', () => {
     expect(deleteSpy).toHaveBeenCalled();
     expect(eqSpy).toHaveBeenCalledWith('card_id', 'card-1');
     expect(eqSpy).toHaveBeenCalledWith('user_id', 'user-1');
+  });
+
+  it('likedCardIds returns the set of cards the user has liked', async () => {
+    inSpy.mockResolvedValueOnce({
+      data: [{ card_id: 'card-1' }, { card_id: 'card-3' }],
+      error: null,
+    });
+
+    const liked = await service.likedCardIds(['card-1', 'card-2', 'card-3'], 'user-1');
+
+    expect(fromSpy).toHaveBeenCalledWith('card_likes');
+    expect(eqSpy).toHaveBeenCalledWith('user_id', 'user-1');
+    expect(inSpy).toHaveBeenCalledWith('card_id', ['card-1', 'card-2', 'card-3']);
+    expect(liked).toEqual(new Set(['card-1', 'card-3']));
+  });
+
+  it('likedCardIds short-circuits without querying when no card ids are given', async () => {
+    const liked = await service.likedCardIds([], 'user-1');
+
+    expect(liked.size).toBe(0);
+    expect(inSpy).not.toHaveBeenCalled();
+  });
+
+  it('likedCardIds rejects when the query errors', async () => {
+    const queryError = new Error('boom');
+    inSpy.mockResolvedValueOnce({ data: null, error: queryError });
+
+    await expect(service.likedCardIds(['card-1'], 'user-1')).rejects.toBe(queryError);
   });
 });

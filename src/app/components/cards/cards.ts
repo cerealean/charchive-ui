@@ -14,6 +14,7 @@ import { Router } from '@angular/router';
 import { CardPreviewCardComponent } from '../card-preview-card/card-preview-card';
 import { CardListRecord } from '../../interfaces/card-list-record.interface';
 import { CardListViewModel } from '../../interfaces/card-list-view-model.interface';
+import { AuthService } from '../../services/auth';
 import { CardService } from '../../services/card';
 import { ProfileService } from '../../services/profile';
 
@@ -32,6 +33,7 @@ const MAX_VISIBLE_PAGE_BUTTONS = 7;
 export class CardsComponent implements OnInit, AfterViewInit {
   private readonly cardsService = inject(CardService);
   private readonly profiles = inject(ProfileService);
+  private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly relativeTimeFormatter = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
@@ -188,6 +190,7 @@ export class CardsComponent implements OnInit, AfterViewInit {
       );
 
       const imageUrlByCardId = await this.resolveCardImageUrls(cardRows);
+      const likedCardIds = await this.resolveLikedCardIds(cardRows);
 
       const viewModels: CardListViewModel[] = cardRows.map((card) => {
         const name = card.current_version?.character_name?.trim() || card.title;
@@ -200,6 +203,7 @@ export class CardsComponent implements OnInit, AfterViewInit {
           createdAtIso: card.created_at,
           createdAgo: this.formatRelativeTime(card.created_at),
           likeCount: card.like_count ?? 0,
+          liked: likedCardIds.has(card.id),
           imageUrl: imageUrlByCardId.get(card.id) ?? null,
           tags: card.tags
             .map((tagRecord) => tagRecord.tag)
@@ -271,6 +275,23 @@ export class CardsComponent implements OnInit, AfterViewInit {
       globalThis.localStorage.setItem(PAGE_SIZE_STORAGE_KEY, String(pageSize));
     } catch {
       // Ignore storage errors; pagination still works for this session.
+    }
+  }
+
+  private async resolveLikedCardIds(cards: readonly CardListRecord[]): Promise<Set<string>> {
+    const user = await this.auth.getUser();
+
+    if (!user || cards.length === 0) {
+      return new Set();
+    }
+
+    try {
+      return await this.cardsService.likedCardIds(
+        cards.map((card) => card.id),
+        user.id,
+      );
+    } catch {
+      return new Set();
     }
   }
 
