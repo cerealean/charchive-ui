@@ -22,13 +22,43 @@ const OWNER_USERS = [
     id: '11111111-1111-4111-8111-111111111111',
     email: 'seed-owner-1@charchive.local',
     displayName: 'Seed Owner One',
+    username: 'seed_owner_one',
   },
   {
     id: '22222222-2222-4222-8222-222222222222',
     email: 'seed-owner-2@charchive.local',
     displayName: 'Seed Owner Two',
+    username: 'seed_owner_two',
   },
 ];
+
+// Extra users that only exist to author comments, so seeded threads come from a
+// varied cast rather than just the two card owners.
+const COMMENTER_USERS = [
+  { id: '33333333-3333-4333-8333-333333333333', displayName: 'Ada Quill', username: 'ada_quill' },
+  { id: '44444444-4444-4444-8444-444444444444', displayName: 'Milo Vex', username: 'milo_vex' },
+  { id: '55555555-5555-4555-8555-555555555555', displayName: 'Rae Solene', username: 'solene_rae' },
+  { id: '66666666-6666-4666-8666-666666666666', displayName: 'Kit Marlow', username: 'kit_marlow' },
+  { id: '77777777-7777-4777-8777-777777777777', displayName: 'Juno Pike', username: 'juno_pike' },
+  { id: '88888888-8888-4888-8888-888888888888', displayName: 'Bram Oso', username: 'bram_oso' },
+  {
+    id: '99999999-9999-4999-8999-999999999999',
+    displayName: 'Nova Ledger',
+    username: 'nova_ledger',
+  },
+  { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', displayName: 'Theo Wren', username: 'theo_wren' },
+].map((user, index) => ({
+  ...user,
+  email: `seed-commenter-${index + 1}@charchive.local`,
+}));
+
+const ALL_SEED_USERS = [...OWNER_USERS, ...COMMENTER_USERS];
+
+const MAX_COMMENT_DEPTH = 6;
+// Probability that a card (public/unlisted) gets any comments at all.
+const CARD_HAS_COMMENTS_PROBABILITY = 0.65;
+// Probability a comment at a given depth (1-indexed) spawns replies; deeper = rarer.
+const REPLY_PROBABILITY_BY_DEPTH = [0, 0.55, 0.4, 0.3, 0.2, 0.12];
 
 const CARD_VISIBILITY = ['private', 'unlisted', 'public'];
 const CARD_RATING = ['unknown', 'sfw', 'nsfw'];
@@ -375,6 +405,110 @@ function templateHints(template) {
   };
 }
 
+const COMMENT_END_DATE = new Date('2026-06-06T00:00:00.000Z');
+
+const SHORT_COMMENTS = [
+  'Love this card!',
+  'Great work!',
+  'Amazing character.',
+  'This is so good.',
+  'Instant download.',
+  'Underrated, honestly.',
+  'The writing here is excellent.',
+  'Such a fun concept.',
+  'Adding this to my collection.',
+  'Chef’s kiss.',
+];
+
+// Builds a plain-text comment body that always passes the card_comments
+// content-validation trigger (no HTML, no URLs).
+function makeCommentBody() {
+  const style = faker.number.int({ min: 1, max: 4 });
+  let body;
+
+  if (style === 1) {
+    body = faker.helpers.arrayElement(SHORT_COMMENTS);
+  } else if (style === 2) {
+    body = faker.lorem.sentence();
+  } else if (style === 3) {
+    body = faker.lorem.sentences({ min: 2, max: 3 });
+  } else {
+    body = `${faker.lorem.sentence()} ${faker.helpers.arrayElement(['', '', 'Nice job.', '🔥'])}`;
+  }
+
+  // Defensive: strip anything the validator would reject and clamp length.
+  body = body
+    .replace(/[<>]/g, '')
+    .replace(/https?:\/\/\S+/gi, '')
+    .replace(/www\.\S+/gi, '')
+    .trim();
+
+  if (body.length > 1000) {
+    body = body.slice(0, 1000).trim();
+  }
+
+  return body || 'Nice card!';
+}
+
+function makeComment(card, parentId, depth, fromDate) {
+  const author = faker.helpers.arrayElement(ALL_SEED_USERS);
+  const earliest = new Date(fromDate.getTime() + 5 * 60 * 1000);
+  const from = new Date(Math.min(earliest.getTime(), COMMENT_END_DATE.getTime() - 1000));
+  const createdAtDate = faker.date.between({ from, to: COMMENT_END_DATE });
+
+  return {
+    id: faker.string.uuid(),
+    card_id: card.id,
+    author_id: author.id,
+    parent_comment_id: parentId,
+    body: makeCommentBody(),
+    depth,
+    created_at: createdAtDate.toISOString(),
+    createdAtDate,
+  };
+}
+
+function addReplies(card, parent, comments) {
+  if (parent.depth >= MAX_COMMENT_DEPTH) {
+    return;
+  }
+
+  const replyProbability = REPLY_PROBABILITY_BY_DEPTH[parent.depth] ?? 0.1;
+
+  if (!faker.datatype.boolean({ probability: replyProbability })) {
+    return;
+  }
+
+  const replyCount = faker.helpers.weightedArrayElement([
+    { weight: 6, value: 1 },
+    { weight: 3, value: 2 },
+    { weight: 1, value: 3 },
+  ]);
+
+  for (let i = 0; i < replyCount; i += 1) {
+    const reply = makeComment(card, parent.id, parent.depth + 1, parent.createdAtDate);
+    comments.push(reply);
+    addReplies(card, reply, comments);
+  }
+}
+
+function generateCardComments(card, cardCreatedAt, comments) {
+  const rootCount = faker.helpers.weightedArrayElement([
+    { weight: 5, value: 1 },
+    { weight: 5, value: 2 },
+    { weight: 4, value: 3 },
+    { weight: 2, value: 4 },
+    { weight: 1, value: 5 },
+    { weight: 1, value: 6 },
+  ]);
+
+  for (let i = 0; i < rootCount; i += 1) {
+    const root = makeComment(card, null, 1, cardCreatedAt);
+    comments.push(root);
+    addReplies(card, root, comments);
+  }
+}
+
 function buildSeedRows(templates, imageAssets) {
   faker.seed(FAKER_SEED);
 
@@ -383,6 +517,7 @@ function buildSeedRows(templates, imageAssets) {
   const versions = [];
   const files = [];
   const cardTags = [];
+  const comments = [];
   const tagSet = new Set();
 
   for (let i = 0; i < SEED_COUNT; i += 1) {
@@ -463,12 +598,22 @@ function buildSeedRows(templates, imageAssets) {
       desired_avatar_file_id: avatarFileId,
       current_version_id: null,
       like_count: faker.number.int({ min: 0, max: 200 }),
-      comment_count: faker.number.int({ min: 0, max: 40 }),
+      // Kept at 0 here; the card_comments AFTER INSERT triggers raise it to the
+      // real number of seeded comments below.
+      comment_count: 0,
       download_count: faker.number.int({ min: 0, max: 400 }),
       created_at: createdAt.toISOString(),
       updated_at: updatedAt.toISOString(),
       published_at: publishedAt ? publishedAt.toISOString() : null,
     });
+
+    // Comments are only meaningful on cards others can actually read.
+    if (
+      visibility !== 'private' &&
+      faker.datatype.boolean({ probability: CARD_HAS_COMMENTS_PROBABILITY })
+    ) {
+      generateCardComments(cards[cards.length - 1], createdAt, comments);
+    }
 
     versions.push({
       id: versionId,
@@ -522,13 +667,13 @@ function buildSeedRows(templates, imageAssets) {
     return { id: faker.string.uuid(), slug, name };
   });
 
-  return { cards, versions, files, tags, cardTags };
+  return { cards, versions, files, tags, cardTags, comments };
 }
 
 function renderUserInsertSql() {
   const now = new Date().toISOString();
 
-  const blocks = OWNER_USERS.map(
+  const blocks = ALL_SEED_USERS.map(
     (user) => `
 insert into auth.users (
   id,
@@ -557,7 +702,7 @@ values (
   crypt('seed-password-unsafe', gen_salt('bf')),
   ${sqlString(now)}::timestamptz,
   ${sqlJson({ provider: 'email', providers: ['email'] })},
-  ${sqlJson({ display_name: user.displayName, seeded: true })},
+  ${sqlJson({ full_name: user.displayName, display_name: user.displayName, seeded: true })},
   ${sqlString(now)}::timestamptz,
   ${sqlString(now)}::timestamptz,
   false,
@@ -570,6 +715,22 @@ on conflict (id) do nothing;`,
   ).join('\n');
 
   return blocks;
+}
+
+// The on_auth_user_created trigger creates a bare profile (no username); set a
+// username here so seeded comment authors and card owners show a real handle.
+function renderProfilesSql() {
+  const values = ALL_SEED_USERS.map(
+    (user) =>
+      `(${sqlString(user.id)}, ${sqlString(user.username)}, ${sqlString(user.displayName)})`,
+  ).join(',\n  ');
+
+  return `insert into public.profiles (id, username, full_name)
+values
+  ${values}
+on conflict (id) do update
+set username = excluded.username,
+  full_name = excluded.full_name;`;
 }
 
 function renderInsert(tableName, columns, rows, mapper) {
@@ -744,6 +905,46 @@ function buildSeedSql(rows) {
     (row) => [sqlString(row.card_id), sqlString(row.tag_id)],
   );
 
+  // Insert comments grouped by depth (shallowest first) so every reply's parent
+  // already exists when the set_card_comment_depth trigger looks it up. depth is
+  // computed by that trigger, so it is intentionally not inserted here.
+  const commentColumns = [
+    'id',
+    'card_id',
+    'author_id',
+    'parent_comment_id',
+    'body',
+    'created_at',
+    'updated_at',
+  ];
+  const commentMapper = (row) => [
+    sqlString(row.id),
+    sqlString(row.card_id),
+    sqlString(row.author_id),
+    sqlNullableString(row.parent_comment_id),
+    sqlString(row.body),
+    `${sqlString(row.created_at)}::timestamptz`,
+    // Match created_at so seeded comments are not flagged as edited.
+    `${sqlString(row.created_at)}::timestamptz`,
+  ];
+  const maxDepth = rows.comments.reduce((max, comment) => Math.max(max, comment.depth), 0);
+  const commentSqlBlocks = [];
+
+  for (let depth = 1; depth <= maxDepth; depth += 1) {
+    const rowsAtDepth = rows.comments.filter((comment) => comment.depth === depth);
+
+    if (rowsAtDepth.length > 0) {
+      commentSqlBlocks.push(
+        renderInsert('public.card_comments', commentColumns, rowsAtDepth, commentMapper),
+      );
+    }
+  }
+
+  const commentsSql =
+    commentSqlBlocks.length > 0
+      ? commentSqlBlocks.join('\n\n')
+      : '-- No comments generated for this seed run.';
+
   const currentVersionSql = `
 update public.cards c
 set current_version_id = v.id
@@ -772,7 +973,9 @@ begin;
 
 ${renderUserInsertSql()}
 
-truncate table public.card_tags, public.card_files, public.card_versions, public.cards, public.tags restart identity cascade;
+${renderProfilesSql()}
+
+truncate table public.card_comments, public.card_tags, public.card_files, public.card_versions, public.cards, public.tags restart identity cascade;
 
 ${tagsSql}
 
@@ -787,6 +990,8 @@ ${currentVersionSql}
 ${avatarUpdateSql}
 
 ${cardTagsSql}
+
+${commentsSql}
 
 commit;
 `;
