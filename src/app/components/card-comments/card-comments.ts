@@ -48,6 +48,10 @@ export class CardCommentsComponent {
   protected readonly bodyLength = signal(0);
   protected readonly clientError = signal('');
 
+  protected readonly editingId = signal<string | null>(null);
+  protected readonly editSaving = signal(false);
+  protected readonly editError = signal('');
+
   private readonly currentUserId = signal<string | null>(null);
   private readonly currentUserAvatarUrl = signal<string | null>(null);
   private avatarObjectUrls: string[] = [];
@@ -67,6 +71,17 @@ export class CardCommentsComponent {
 
   protected readonly form = new FormGroup({ body: this.body });
 
+  protected readonly editBody = new FormControl('', {
+    nonNullable: true,
+    validators: [
+      Validators.required,
+      Validators.maxLength(MAX_COMMENT_LENGTH),
+      commentContentValidator,
+    ],
+  });
+
+  protected readonly editForm = new FormGroup({ body: this.editBody });
+
   constructor() {
     this.destroyRef.onDestroy(() => this.revokeAvatarObjectUrls());
 
@@ -78,7 +93,11 @@ export class CardCommentsComponent {
     this.body.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
       this.bodyLength.set(value.length);
       this.postError.set('');
-      this.clientError.set(this.body.dirty ? this.describeControlError() : '');
+      this.clientError.set(this.body.dirty ? this.describeControlError(this.body) : '');
+    });
+
+    this.editBody.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.editError.set(this.editBody.dirty ? this.describeControlError(this.editBody) : '');
     });
   }
 
@@ -93,7 +112,7 @@ export class CardCommentsComponent {
     this.body.markAsDirty();
 
     if (this.form.invalid) {
-      this.clientError.set(this.describeControlError());
+      this.clientError.set(this.describeControlError(this.body));
       return;
     }
 
@@ -135,6 +154,60 @@ export class CardCommentsComponent {
     }
 
     this.deletingId.set(null);
+  }
+
+  protected startEdit(comment: CardCommentViewModel): void {
+    this.editingId.set(comment.id);
+    this.editError.set('');
+    this.editBody.reset(comment.body);
+    this.editBody.markAsPristine();
+  }
+
+  protected cancelEdit(): void {
+    this.editingId.set(null);
+    this.editError.set('');
+    this.editBody.reset('');
+  }
+
+  protected async saveEdit(comment: CardCommentViewModel): Promise<void> {
+    if (this.editSaving()) {
+      return;
+    }
+
+    this.editBody.markAsDirty();
+
+    if (this.editForm.invalid) {
+      this.editError.set(this.describeControlError(this.editBody));
+      return;
+    }
+
+    const nextBody = this.editBody.value.trim();
+
+    if (nextBody === comment.body) {
+      this.cancelEdit();
+      return;
+    }
+
+    this.editSaving.set(true);
+    this.editError.set('');
+
+    try {
+      const record = await this.cardsService.updateComment(comment.id, nextBody);
+      this.comments.update((current) =>
+        current.map((existing) =>
+          existing.id === comment.id
+            ? { ...existing, body: record.body, edited: record.updated_at !== record.created_at }
+            : existing,
+        ),
+      );
+      this.cancelEdit();
+    } catch (error) {
+      this.editError.set(
+        error instanceof Error ? error.message : 'Unable to save your changes. Please try again.',
+      );
+    } finally {
+      this.editSaving.set(false);
+    }
   }
 
   protected goToLogin(): void {
@@ -277,12 +350,13 @@ export class CardCommentsComponent {
       body: record.body,
       createdAtIso: record.created_at,
       createdAgo: this.formatRelativeTime(record.created_at),
+      edited: record.updated_at !== record.created_at,
       isOwn,
     };
   }
 
-  private describeControlError(): string {
-    const errors = this.body.errors;
+  private describeControlError(control: FormControl<string>): string {
+    const errors = control.errors;
 
     if (!errors) {
       return '';

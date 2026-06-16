@@ -88,27 +88,81 @@
                     </span>
                     <span class="text-xs text-base-content/60">
                       <time [attr.datetime]="comment.createdAtIso">{{ comment.createdAgo }}</time>
+                      @if (comment.edited) {
+                        <span class="ml-1 italic">(edited)</span>
+                      }
                     </span>
                   </div>
 
-                  @if (comment.isOwn) {
-                    <button
-                      type="button"
-                      class="btn btn-ghost btn-xs text-error"
-                      [disabled]="deletingId() === comment.id"
-                      [attr.aria-label]="'Delete your comment posted ' + comment.createdAgo"
-                      (click)="deleteComment(comment.id)"
-                    >
-                      {{ deletingId() === comment.id ? 'Deleting...' : 'Delete' }}
-                    </button>
+                  @if (comment.isOwn && editingId() !== comment.id) {
+                    <div class="flex items-center gap-1">
+                      <button
+                        type="button"
+                        class="btn btn-ghost btn-xs"
+                        [attr.aria-label]="'Edit your comment posted ' + comment.createdAgo"
+                        (click)="startEdit(comment)"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-ghost btn-xs text-error"
+                        [disabled]="deletingId() === comment.id"
+                        [attr.aria-label]="'Delete your comment posted ' + comment.createdAgo"
+                        (click)="deleteComment(comment.id)"
+                      >
+                        {{ deletingId() === comment.id ? 'Deleting...' : 'Delete' }}
+                      </button>
+                    </div>
                   }
                 </div>
 
-                <p
-                  class="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-base-content/85"
-                >
-                  {{ comment.body }}
-                </p>
+                @if (editingId() === comment.id) {
+                  <form class="mt-2 space-y-2" [formGroup]="editForm" (ngSubmit)="saveEdit(comment)">
+                    <label class="form-control">
+                      <span class="sr-only">Edit your comment</span>
+                      <textarea
+                        class="textarea textarea-bordered min-h-24 w-full"
+                        [class.textarea-error]="editError()"
+                        formControlName="body"
+                        [attr.maxlength]="maxLength"
+                        [attr.aria-invalid]="editError() ? 'true' : null"
+                        aria-describedby="edit-error-{{ comment.id }}"
+                      ></textarea>
+                    </label>
+
+                    <div class="flex flex-wrap items-center gap-2">
+                      <button
+                        type="submit"
+                        class="btn btn-primary btn-sm"
+                        [disabled]="editSaving() || editForm.invalid"
+                      >
+                        @if (editSaving()) {
+                          <span class="loading loading-spinner loading-xs" aria-hidden="true"></span>
+                        }
+                        {{ editSaving() ? 'Saving...' : 'Save changes' }}
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-ghost btn-sm"
+                        [disabled]="editSaving()"
+                        (click)="cancelEdit()"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+
+                    <p id="edit-error-{{ comment.id }}" role="alert" class="min-h-5 text-sm text-error">
+                      {{ editError() }}
+                    </p>
+                  </form>
+                } @else {
+                  <p
+                    class="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-base-content/85"
+                  >
+                    {{ comment.body }}
+                  </p>
+                }
               </div>
             </div>
           </li>

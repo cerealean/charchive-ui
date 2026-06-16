@@ -165,7 +165,7 @@ export class CardService {
   commentsForCard(cardId: string) {
     return this.supabase.client
       .from('card_comments')
-      .select('id, author_id, body, created_at')
+      .select('id, author_id, body, created_at, updated_at')
       .eq('card_id', cardId)
       .order('created_at', { ascending: false })
       .returns<CardCommentRecord[]>();
@@ -181,7 +181,28 @@ export class CardService {
     const { data, error } = await this.supabase.client
       .from('card_comments')
       .insert({ card_id: cardId, author_id: authorId, body: validation.value })
-      .select('id, author_id, body, created_at')
+      .select('id, author_id, body, created_at, updated_at')
+      .single<CardCommentRecord>();
+
+    if (error) {
+      throw this.normalizeCommentError(error);
+    }
+
+    return data;
+  }
+
+  async updateComment(commentId: string, body: string): Promise<CardCommentRecord> {
+    const validation = validateCommentContent(body);
+
+    if (!validation.valid) {
+      throw new Error(validation.message);
+    }
+
+    const { data, error } = await this.supabase.client
+      .from('card_comments')
+      .update({ body: validation.value })
+      .eq('id', commentId)
+      .select('id, author_id, body, created_at, updated_at')
       .single<CardCommentRecord>();
 
     if (error) {

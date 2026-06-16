@@ -3,4 +3,5 @@ export interface CardCommentRecord {
   author_id: string;
   body: string;
   created_at: string;
+  updated_at: string;
 }
