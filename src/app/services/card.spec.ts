@@ -112,7 +112,7 @@ describe('CardService', () => {
     expect(fromSpy).toHaveBeenCalledWith('card_likes');
     expect(upsertSpy).toHaveBeenCalledWith(
       { card_id: 'card-1', user_id: 'user-1' },
-      { onConflict: 'card_id,user_id' },
+      { onConflict: 'card_id,user_id', ignoreDuplicates: true },
     );
   });
 

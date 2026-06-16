@@ -125,7 +125,10 @@ export class CardService {
   likeCard(cardId: string, userId: string) {
     return this.supabase.client
       .from('card_likes')
-      .upsert({ card_id: cardId, user_id: userId }, { onConflict: 'card_id,user_id' });
+      .upsert(
+        { card_id: cardId, user_id: userId },
+        { onConflict: 'card_id,user_id', ignoreDuplicates: true },
+      );
   }
 
   unlikeCard(cardId: string, userId: string) {
