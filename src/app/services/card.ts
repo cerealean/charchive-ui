@@ -1,7 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 
+import { CardCommentRecord } from '../interfaces/card-comment-record.interface';
 import { CardDetailRecord } from '../interfaces/card-detail-record.interface';
 import { CardListRecord } from '../interfaces/card-list-record.interface';
+import { validateCommentContent } from '../shared/comment-validation';
 import { SupabaseService } from './supabase';
 
 interface OwnedCardListRecord {
@@ -10,6 +12,7 @@ interface OwnedCardListRecord {
   visibility: 'private' | 'unlisted' | 'public';
   updated_at: string;
   like_count: number;
+  comment_count: number;
   avatar_file: {
     storage_path: string;
   } | null;
@@ -66,6 +69,7 @@ export class CardService {
           visibility,
           updated_at,
           like_count,
+          comment_count,
           avatar_file:card_files!cards_avatar_file_id_fkey(
             storage_path
           )
@@ -86,6 +90,7 @@ export class CardService {
           title,
           created_at,
           like_count,
+          comment_count,
           current_version:card_versions!cards_current_version_id_fkey(
             character_name,
             creator_name,
@@ -157,6 +162,57 @@ export class CardService {
     return new Set((data ?? []).map((row) => row.card_id as string));
   }
 
+  commentsForCard(cardId: string) {
+    return this.supabase.client
+      .from('card_comments')
+      .select('id, author_id, body, created_at')
+      .eq('card_id', cardId)
+      .order('created_at', { ascending: false })
+      .returns<CardCommentRecord[]>();
+  }
+
+  async addComment(cardId: string, authorId: string, body: string): Promise<CardCommentRecord> {
+    const validation = validateCommentContent(body);
+
+    if (!validation.valid) {
+      throw new Error(validation.message);
+    }
+
+    const { data, error } = await this.supabase.client
+      .from('card_comments')
+      .insert({ card_id: cardId, author_id: authorId, body: validation.value })
+      .select('id, author_id, body, created_at')
+      .single<CardCommentRecord>();
+
+    if (error) {
+      throw this.normalizeCommentError(error);
+    }
+
+    return data;
+  }
+
+  deleteComment(commentId: string) {
+    return this.supabase.client.from('card_comments').delete().eq('id', commentId);
+  }
+
+  private normalizeCommentError(error: unknown): Error {
+    if (!(error instanceof Error)) {
+      return new Error('Unable to post this comment.');
+    }
+
+    const message = error.message.toLowerCase();
+
+    if (message.includes('plain text') || message.includes('links or website')) {
+      return error;
+    }
+
+    if (message.includes('row-level security policy')) {
+      return new Error('You must be signed in to comment on this card.');
+    }
+
+    return error;
+  }
+
   publicCardsPage(page: number, pageSize: number) {
     const safePage = Math.max(1, Math.trunc(page));
     const safePageSize = Math.max(1, Math.trunc(pageSize));
@@ -173,6 +229,7 @@ export class CardService {
           tagline,
           created_at,
           like_count,
+          comment_count,
           current_version:card_versions!cards_current_version_id_fkey(
             character_name
           ),

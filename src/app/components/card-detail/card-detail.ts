@@ -14,13 +14,14 @@ import { CardDetailRecord } from '../../interfaces/card-detail-record.interface'
 import { AuthService } from '../../services/auth';
 import { CardService } from '../../services/card';
 import { ProfileService } from '../../services/profile';
+import { CardCommentsComponent } from '../card-comments/card-comments';
 
 @Component({
   selector: 'app-card-detail',
   templateUrl: './card-detail.html',
   styleUrl: './card-detail.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe],
+  imports: [DatePipe, CardCommentsComponent],
 })
 export class CardDetailComponent {
   private readonly route = inject(ActivatedRoute);

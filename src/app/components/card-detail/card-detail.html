@@ -159,6 +159,8 @@
                 {{ card.current_version?.creator_notes || 'No creator notes provided.' }}
               </p>
             </section>
+
+            <app-card-comments [cardId]="card.id" />
           </div>
         </article>
       }

@@ -7,6 +7,7 @@ export interface CardListViewModel {
   createdAgo: string;
   likeCount: number;
   liked: boolean;
+  commentCount: number;
   imageUrl: string | null;
   tags: Array<{
     slug: string;

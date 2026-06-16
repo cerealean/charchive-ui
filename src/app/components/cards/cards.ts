@@ -204,6 +204,7 @@ export class CardsComponent implements OnInit, AfterViewInit {
           createdAgo: this.formatRelativeTime(card.created_at),
           likeCount: card.like_count ?? 0,
           liked: likedCardIds.has(card.id),
+          commentCount: card.comment_count ?? 0,
           imageUrl: imageUrlByCardId.get(card.id) ?? null,
           tags: card.tags
             .map((tagRecord) => tagRecord.tag)

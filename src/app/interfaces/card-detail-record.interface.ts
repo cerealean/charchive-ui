@@ -4,6 +4,7 @@ export interface CardDetailRecord {
   title: string;
   created_at: string;
   like_count: number;
+  comment_count: number;
   current_version: {
     character_name: string;
     creator_name: string | null;

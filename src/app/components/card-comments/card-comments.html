@@ -1,0 +1,94 @@
+<section class="rounded-2xl border border-base-300 bg-base-200/60 p-4" aria-labelledby="comments-heading">
+  <h2 id="comments-heading" class="text-xs font-semibold uppercase tracking-wide text-base-content/60">
+    Comments
+    <span class="badge badge-neutral badge-sm align-middle">{{ commentCount() }}</span>
+  </h2>
+
+  @if (canComment()) {
+    <form class="mt-4 space-y-2" (ngSubmit)="submit()">
+      <label class="form-control">
+        <span class="sr-only">Add a comment</span>
+        <textarea
+          class="textarea textarea-bordered min-h-24 w-full"
+          [class.textarea-error]="clientError()"
+          [formControl]="form"
+          [attr.maxlength]="maxLength"
+          [attr.aria-invalid]="clientError() ? 'true' : null"
+          aria-describedby="comment-counter comment-error"
+          placeholder="Share your thoughts about this card (plain text only)..."
+        ></textarea>
+      </label>
+
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <p id="comment-counter" class="text-xs text-base-content/60" aria-live="polite">
+          {{ remainingChars() }} characters remaining
+        </p>
+        <button
+          type="submit"
+          class="btn btn-primary btn-sm"
+          [disabled]="posting() || form.invalid"
+        >
+          @if (posting()) {
+            <span class="loading loading-spinner loading-xs" aria-hidden="true"></span>
+          }
+          {{ posting() ? 'Posting...' : 'Post comment' }}
+        </button>
+      </div>
+
+      <p id="comment-error" role="alert" class="min-h-5 text-sm text-error">
+        {{ clientError() || postError() }}
+      </p>
+    </form>
+  } @else {
+    <div class="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-base-300 bg-base-100 p-3">
+      <span class="text-sm text-base-content/70">Log in to join the conversation.</span>
+      <button type="button" class="btn btn-outline btn-xs" (click)="goToLogin()">Log in to comment</button>
+    </div>
+  }
+
+  <div class="mt-5">
+    @if (loading()) {
+      <div role="status" class="flex items-center gap-2 text-sm text-base-content/70">
+        <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
+        <span>Loading comments...</span>
+      </div>
+    } @else if (loadError()) {
+      <div role="alert" class="alert alert-error alert-soft">
+        <span>{{ loadError() }}</span>
+      </div>
+    } @else if (commentCount() === 0) {
+      <p class="text-sm text-base-content/65">No comments yet. Be the first to comment.</p>
+    } @else {
+      <ul class="space-y-3">
+        @for (comment of comments(); track comment.id) {
+          <li class="rounded-xl border border-base-300 bg-base-100 p-3">
+            <div class="flex flex-wrap items-baseline justify-between gap-2">
+              <div class="flex items-baseline gap-2">
+                <span class="text-sm font-semibold text-base-content">{{ comment.authorName }}</span>
+                <span class="text-xs text-base-content/60">
+                  <time [attr.datetime]="comment.createdAtIso">{{ comment.createdAgo }}</time>
+                </span>
+              </div>
+
+              @if (comment.isOwn) {
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-xs text-error"
+                  [disabled]="deletingId() === comment.id"
+                  [attr.aria-label]="'Delete your comment posted ' + comment.createdAgo"
+                  (click)="deleteComment(comment.id)"
+                >
+                  {{ deletingId() === comment.id ? 'Deleting...' : 'Delete' }}
+                </button>
+              }
+            </div>
+
+            <p class="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-base-content/85">
+              {{ comment.body }}
+            </p>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</section>
