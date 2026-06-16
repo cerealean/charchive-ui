@@ -8,10 +8,19 @@ describe('AvatarComponent', () => {
   let fixture: ComponentFixture<AvatarComponent>;
 
   let uploadResult: { data: unknown; error: unknown };
+  let uploadedPaths: string[];
+  let removedPaths: string[];
 
   const profileServiceMock = {
     downloadImage: async () => ({ data: null, error: null }),
-    uploadAvatar: async () => uploadResult,
+    uploadAvatar: async (filePath: string) => {
+      uploadedPaths.push(filePath);
+      return uploadResult;
+    },
+    removeAvatar: async (path: string) => {
+      removedPaths.push(path);
+      return { data: [], error: null };
+    },
   } as unknown as ProfileService;
 
   function buildFileChangeEvent(): Event {
@@ -23,6 +32,8 @@ describe('AvatarComponent', () => {
 
   beforeEach(async () => {
     uploadResult = { data: null, error: null };
+    uploadedPaths = [];
+    removedPaths = [];
 
     await TestBed.configureTestingModule({
       imports: [AvatarComponent],
@@ -38,18 +49,21 @@ describe('AvatarComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('emits the uploaded file path when the upload succeeds', async () => {
+  it('uploads to the signed-in user folder and emits the path on success', async () => {
+    component.userId = 'user-1';
     const emitted: string[] = [];
     component.upload.subscribe((path) => emitted.push(path));
 
     await component.uploadAvatar(buildFileChangeEvent());
 
     expect(emitted.length).toBe(1);
-    expect(emitted[0]).toMatch(/\.png$/);
+    expect(emitted[0]).toMatch(/^user-1\/.+\.png$/);
+    expect(uploadedPaths).toEqual(emitted);
     expect(component.errorMessage).toBe('');
   });
 
   it('surfaces an error and does not emit when the upload fails', async () => {
+    component.userId = 'user-1';
     uploadResult = { data: null, error: new Error('Upload blocked by policy.') };
     const emitted: string[] = [];
     component.upload.subscribe((path) => emitted.push(path));
@@ -58,5 +72,35 @@ describe('AvatarComponent', () => {
 
     expect(emitted.length).toBe(0);
     expect(component.errorMessage).toBe('Upload blocked by policy.');
+  });
+
+  it('does not upload or emit when no user is signed in', async () => {
+    component.userId = null;
+    const emitted: string[] = [];
+    component.upload.subscribe((path) => emitted.push(path));
+
+    await component.uploadAvatar(buildFileChangeEvent());
+
+    expect(uploadedPaths.length).toBe(0);
+    expect(emitted.length).toBe(0);
+    expect(component.errorMessage).toBe('You must be signed in to upload an image.');
+  });
+
+  it('removes the previous avatar after a successful replacement', async () => {
+    component.userId = 'user-1';
+    component.avatarUrl = 'user-1/old-avatar.png';
+
+    await component.uploadAvatar(buildFileChangeEvent());
+
+    expect(removedPaths).toEqual(['user-1/old-avatar.png']);
+  });
+
+  it('does not attempt removal when there is no existing avatar', async () => {
+    component.userId = 'user-1';
+    component.avatarUrl = null;
+
+    await component.uploadAvatar(buildFileChangeEvent());
+
+    expect(removedPaths.length).toBe(0);
   });
 });

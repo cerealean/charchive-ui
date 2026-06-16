@@ -88,4 +88,8 @@ export class ProfileService {
   uploadAvatar(filePath: string, file: File) {
     return this.supabase.client.storage.from('profile-avatars').upload(filePath, file);
   }
+
+  removeAvatar(path: string) {
+    return this.supabase.client.storage.from('profile-avatars').remove([path]);
+  }
 }

@@ -33,7 +33,11 @@
           novalidate
         >
           <div class="rounded-2xl border border-base-300 bg-base-200/60 p-4 sm:p-5">
-            <app-avatar [avatarUrl]="avatarUrl" (upload)="updateAvatar($event)"></app-avatar>
+            <app-avatar
+              [avatarUrl]="avatarUrl"
+              [userId]="user?.id ?? null"
+              (upload)="updateAvatar($event)"
+            ></app-avatar>
           </div>
 
           <div class="grid gap-5 md:grid-cols-2">

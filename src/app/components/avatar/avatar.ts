@@ -19,12 +19,15 @@ import { ProfileService } from '../../services/profile';
 export class AvatarComponent {
   _avatarUrl: SafeResourceUrl | undefined;
   private avatarObjectUrl: string | null = null;
+  private currentAvatarPath: string | null = null;
   uploading = false;
   errorMessage = '';
   readonly fileInputId = `avatar-upload-${Math.random().toString(36).slice(2, 10)}`;
 
   @Input()
   set avatarUrl(url: string | null) {
+    this.currentAvatarPath = url ?? null;
+
     if (url) {
       this.downloadImage(url);
       return;
@@ -34,6 +37,8 @@ export class AvatarComponent {
     this._avatarUrl = undefined;
     this.detectChangesSafely();
   }
+
+  @Input() userId: string | null = null;
 
   @Output() upload = new EventEmitter<string>();
 
@@ -76,20 +81,43 @@ export class AvatarComponent {
         throw new Error('You must select an image to upload.');
       }
 
+      if (!this.userId) {
+        throw new Error('You must be signed in to upload an image.');
+      }
+
+      const previousPath = this.currentAvatarPath;
       const fileExt = this.resolveFileExtension(file);
-      const filePath = `${crypto.randomUUID()}.${fileExt}`;
+      const filePath = `${this.userId}/${crypto.randomUUID()}.${fileExt}`;
 
       const { error } = await this.profiles.uploadAvatar(filePath, file);
       if (error) {
         throw error;
       }
 
+      await this.removePreviousAvatar(previousPath, filePath);
       this.upload.emit(filePath);
     } catch (error) {
       this.errorMessage = error instanceof Error ? error.message : 'Unable to upload your image.';
     } finally {
       this.uploading = false;
       this.detectChangesSafely();
+    }
+  }
+
+  private async removePreviousAvatar(previousPath: string | null, newPath: string): Promise<void> {
+    if (!previousPath || previousPath === newPath) {
+      return;
+    }
+
+    try {
+      const { error } = await this.profiles.removeAvatar(previousPath);
+      if (error) {
+        console.error('Error removing previous avatar: ', error.message);
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error('Error removing previous avatar: ', error.message);
+      }
     }
   }
 
