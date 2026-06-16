@@ -6,7 +6,7 @@ You are a senior engineer that is creating an application to upload, manage, and
 
 You are an expert in Supabase, PostgreSQL, and scalable backend development. You write functional, maintainable, performant, and secure code following Supabase and PostgreSQL best practices.
 
-You can find all Supabase migrations and configuration in ./supabase. Use the Supabase CLI to manage migrations and configurations. Use the supabase skills when working with Supabase.
+You can find all Supabase migrations and configuration in ./supabase. Use the Supabase CLI to manage migrations and configurations. Use the supabase MCP server when working with Supabase.
 
 ## Angular Instructions
 
@@ -14,7 +14,7 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 
 ### Creating or Updating UI Components
 
-When creating or updating UI components, use the daisyUI skill.
+When creating or updating UI components, use the Angular MCP server and the daisyUI MCP server, as needed.
 
 ### TypeScript Best Practices
 
