@@ -6,7 +6,7 @@ import { existsSync } from 'node:fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..', '..');
-const tempDir = path.join(repoRoot, 'temp');
+const imagesDir = path.join(repoRoot, 'supabase', 'seeds', 'images');
 
 function runSupabase(args, label) {
   const result = spawnSync('supabase', args, {
@@ -69,7 +69,7 @@ function uploadFiles(rows) {
       continue;
     }
 
-    const sourcePath = path.join(tempDir, originalFileName);
+    const sourcePath = path.join(imagesDir, originalFileName);
     if (!existsSync(sourcePath)) {
       continue;
     }

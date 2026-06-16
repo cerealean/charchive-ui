@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const repoRoot = path.resolve(__dirname, '..', '..');
-const tempDir = path.join(repoRoot, 'temp');
+const imagesDir = path.join(repoRoot, 'supabase', 'seeds', 'images');
 const outputSqlPath = path.join(repoRoot, 'supabase', 'seed.sql');
 const storageCardFilesDir = path.join(repoRoot, 'supabase', 'card-files');
 const storageCardFilesGeneratedDir = path.join(storageCardFilesDir, 'cards');
@@ -75,6 +75,17 @@ const FALLBACK_TAGS = [
   'English',
   'SFW',
   'Story',
+];
+
+// Card content (names, descriptions, etc.) is faker-generated; templates only
+// seed the tag pool. The seed images are plain artwork with no embedded card
+// metadata, so these built-in templates provide that tag variety instead.
+const DEFAULT_TEMPLATES = [
+  { data: { tags: ['Fantasy', 'Adventure', 'Hero', 'Magic', 'Roleplay'] } },
+  { data: { tags: ['Sci-Fi', 'Space', 'Robot', 'Cyberpunk', 'Mystery'] } },
+  { data: { tags: ['Slice of Life', 'Comedy', 'Friendly', 'SFW', 'Cozy'] } },
+  { data: { tags: ['Horror', 'Thriller', 'Mystery', 'Dark', 'Suspense'] } },
+  { data: { tags: ['Assistant', 'Tool', 'Helpful', 'Productivity', 'English'] } },
 ];
 
 function sqlString(value) {
@@ -347,21 +358,21 @@ function createCanonicalPayload(raw, sourceApp) {
 }
 
 async function loadExampleAssets() {
-  const files = await fs.readdir(tempDir);
+  const files = await fs.readdir(imagesDir);
   const pngFiles = files.filter((file) => file.endsWith('.png'));
   const jsonFiles = files.filter((file) => file.endsWith('.json'));
 
   const templates = [];
 
   for (const jsonFile of jsonFiles) {
-    const jsonPath = path.join(tempDir, jsonFile);
+    const jsonPath = path.join(imagesDir, jsonFile);
     const raw = JSON.parse(await fs.readFile(jsonPath, 'utf8'));
     templates.push(raw);
   }
 
   const imageAssets = [];
   for (const pngFile of pngFiles) {
-    const pngPath = path.join(tempDir, pngFile);
+    const pngPath = path.join(imagesDir, pngFile);
     const buffer = await fs.readFile(pngPath);
     const stat = await fs.stat(pngPath);
     const metadata = parseCharaMetadataFromPng(buffer);
@@ -378,8 +389,10 @@ async function loadExampleAssets() {
     }
   }
 
+  // The committed seed images are plain artwork without embedded card metadata,
+  // so fall back to the built-in templates for tag variety.
   if (templates.length === 0) {
-    throw new Error('No JSON templates were found in /temp to build seeded card data.');
+    templates.push(...DEFAULT_TEMPLATES);
   }
 
   return { templates, imageAssets };
@@ -576,7 +589,7 @@ function buildSeedRows(templates, imageAssets) {
         size_bytes: imageAsset.sizeBytes,
         sha256: imageAsset.sha256,
         metadata: {
-          source: 'temp/examples',
+          source: 'supabase/seeds/images',
           embedded_payload_detected: Boolean(imageAsset.metadata),
           embedded_spec: imageAsset.metadata?.spec ?? null,
           embedded_name: imageAsset.metadata?.data?.name ?? null,
@@ -1007,7 +1020,7 @@ async function stageStorageObjects(files) {
       continue;
     }
 
-    const sourcePath = path.join(tempDir, file.original_filename);
+    const sourcePath = path.join(imagesDir, file.original_filename);
 
     try {
       await fs.access(sourcePath);
