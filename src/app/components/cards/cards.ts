@@ -199,6 +199,7 @@ export class CardsComponent implements OnInit, AfterViewInit {
           uploader: usernameById.get(card.owner_id) || 'Unknown uploader',
           createdAtIso: card.created_at,
           createdAgo: this.formatRelativeTime(card.created_at),
+          likeCount: card.like_count ?? 0,
           imageUrl: imageUrlByCardId.get(card.id) ?? null,
           tags: card.tags
             .map((tagRecord) => tagRecord.tag)

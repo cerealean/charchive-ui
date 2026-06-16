@@ -3,6 +3,7 @@ export interface CardDetailRecord {
   owner_id: string;
   title: string;
   created_at: string;
+  like_count: number;
   current_version: {
     character_name: string;
     creator_name: string | null;

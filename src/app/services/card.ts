@@ -9,6 +9,7 @@ interface OwnedCardListRecord {
   title: string;
   visibility: 'private' | 'unlisted' | 'public';
   updated_at: string;
+  like_count: number;
   avatar_file: {
     storage_path: string;
   } | null;
@@ -64,6 +65,7 @@ export class CardService {
           title,
           visibility,
           updated_at,
+          like_count,
           avatar_file:card_files!cards_avatar_file_id_fkey(
             storage_path
           )
@@ -83,6 +85,7 @@ export class CardService {
           owner_id,
           title,
           created_at,
+          like_count,
           current_version:card_versions!cards_current_version_id_fkey(
             character_name,
             creator_name,
@@ -104,6 +107,35 @@ export class CardService {
       .maybeSingle<CardDetailRecord>();
   }
 
+  async userLikedCard(cardId: string, userId: string): Promise<boolean> {
+    const { data, error } = await this.supabase.client
+      .from('card_likes')
+      .select('card_id')
+      .eq('card_id', cardId)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return data !== null;
+  }
+
+  likeCard(cardId: string, userId: string) {
+    return this.supabase.client
+      .from('card_likes')
+      .upsert({ card_id: cardId, user_id: userId }, { onConflict: 'card_id,user_id' });
+  }
+
+  unlikeCard(cardId: string, userId: string) {
+    return this.supabase.client
+      .from('card_likes')
+      .delete()
+      .eq('card_id', cardId)
+      .eq('user_id', userId);
+  }
+
   publicCardsPage(page: number, pageSize: number) {
     const safePage = Math.max(1, Math.trunc(page));
     const safePageSize = Math.max(1, Math.trunc(pageSize));
@@ -119,6 +151,7 @@ export class CardService {
           title,
           tagline,
           created_at,
+          like_count,
           current_version:card_versions!cards_current_version_id_fkey(
             character_name
           ),

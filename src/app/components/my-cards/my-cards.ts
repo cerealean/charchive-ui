@@ -98,6 +98,7 @@ export class MyCardsComponent implements OnInit {
         uploader: 'You',
         createdAtIso: card.updated_at,
         createdAgo: `Updated ${this.formatRelativeTime(card.updated_at)}`,
+        likeCount: card.like_count ?? 0,
         imageUrl: imageUrlByCardId.get(card.id) ?? null,
         tags: [
           {

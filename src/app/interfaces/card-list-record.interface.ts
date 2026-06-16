@@ -4,6 +4,7 @@ export interface CardListRecord {
   title: string;
   tagline: string | null;
   created_at: string;
+  like_count: number;
   current_version: {
     character_name: string;
   } | null;

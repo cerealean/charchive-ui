@@ -5,6 +5,7 @@ export interface CardListViewModel {
   uploader: string;
   createdAtIso: string;
   createdAgo: string;
+  likeCount: number;
   imageUrl: string | null;
   tags: Array<{
     slug: string;
