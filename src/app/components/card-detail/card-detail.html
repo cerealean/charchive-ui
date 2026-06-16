@@ -92,17 +92,17 @@
                     <p class="mt-2 text-sm text-base-content/65">No tags yet.</p>
                   }
                 </section>
-
-                <section class="rounded-2xl border border-base-300 bg-base-200/60 p-4">
-                  <h2 class="text-xs font-semibold uppercase tracking-wide text-base-content/60">
-                    Card creator's notes
-                  </h2>
-                  <p class="mt-2 whitespace-pre-wrap leading-7 text-base-content/80">
-                    {{ card.current_version?.creator_notes || 'No creator notes provided.' }}
-                  </p>
-                </section>
               </div>
             </div>
+
+            <section class="rounded-2xl border border-base-300 bg-base-200/60 p-4">
+              <h2 class="text-xs font-semibold uppercase tracking-wide text-base-content/60">
+                Card creator's notes
+              </h2>
+              <p class="mt-2 whitespace-pre-wrap leading-7 text-base-content/80">
+                {{ card.current_version?.creator_notes || 'No creator notes provided.' }}
+              </p>
+            </section>
           </div>
         </article>
       }
