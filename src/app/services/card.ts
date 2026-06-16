@@ -165,13 +165,18 @@ export class CardService {
   commentsForCard(cardId: string) {
     return this.supabase.client
       .from('card_comments')
-      .select('id, author_id, body, created_at, updated_at')
+      .select('id, author_id, parent_comment_id, depth, body, created_at, updated_at')
       .eq('card_id', cardId)
       .order('created_at', { ascending: false })
       .returns<CardCommentRecord[]>();
   }
 
-  async addComment(cardId: string, authorId: string, body: string): Promise<CardCommentRecord> {
+  async addComment(
+    cardId: string,
+    authorId: string,
+    body: string,
+    parentCommentId: string | null = null,
+  ): Promise<CardCommentRecord> {
     const validation = validateCommentContent(body);
 
     if (!validation.valid) {
@@ -180,8 +185,13 @@ export class CardService {
 
     const { data, error } = await this.supabase.client
       .from('card_comments')
-      .insert({ card_id: cardId, author_id: authorId, body: validation.value })
-      .select('id, author_id, body, created_at, updated_at')
+      .insert({
+        card_id: cardId,
+        author_id: authorId,
+        parent_comment_id: parentCommentId,
+        body: validation.value,
+      })
+      .select('id, author_id, parent_comment_id, depth, body, created_at, updated_at')
       .single<CardCommentRecord>();
 
     if (error) {
@@ -202,7 +212,7 @@ export class CardService {
       .from('card_comments')
       .update({ body: validation.value })
       .eq('id', commentId)
-      .select('id, author_id, body, created_at, updated_at')
+      .select('id, author_id, parent_comment_id, depth, body, created_at, updated_at')
       .single<CardCommentRecord>();
 
     if (error) {
@@ -223,7 +233,13 @@ export class CardService {
 
     const message = error.message.toLowerCase();
 
-    if (message.includes('plain text') || message.includes('links or website')) {
+    if (
+      message.includes('plain text') ||
+      message.includes('links or website') ||
+      message.includes('nested up to') ||
+      message.includes('same card as the comment') ||
+      message.includes('no longer exists')
+    ) {
       return error;
     }
 

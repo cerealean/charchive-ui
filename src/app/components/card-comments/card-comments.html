@@ -60,8 +60,13 @@
       <p class="text-sm text-base-content/65">No comments yet. Be the first to comment.</p>
     } @else {
       <ul class="space-y-3">
-        @for (comment of comments(); track comment.id) {
-          <li class="rounded-xl border border-base-300 bg-base-100 p-3">
+        @for (comment of thread(); track comment.id) {
+          <li
+            class="rounded-xl border border-base-300 bg-base-100 p-3"
+            [class.border-l-4]="comment.depth > 1"
+            [class.border-l-primary]="comment.depth > 1"
+            [style.margin-left.rem]="(comment.depth - 1) * 1.5"
+          >
             <div class="flex gap-3">
               @if (comment.avatarUrl) {
                 <img
@@ -94,25 +99,37 @@
                     </span>
                   </div>
 
-                  @if (comment.isOwn && editingId() !== comment.id) {
+                  @if (editingId() !== comment.id) {
                     <div class="flex items-center gap-1">
-                      <button
-                        type="button"
-                        class="btn btn-ghost btn-xs"
-                        [attr.aria-label]="'Edit your comment posted ' + comment.createdAgo"
-                        (click)="startEdit(comment)"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn-ghost btn-xs text-error"
-                        [disabled]="deletingId() === comment.id"
-                        [attr.aria-label]="'Delete your comment posted ' + comment.createdAgo"
-                        (click)="deleteComment(comment.id)"
-                      >
-                        {{ deletingId() === comment.id ? 'Deleting...' : 'Delete' }}
-                      </button>
+                      @if (comment.canReply && replyingToId() !== comment.id) {
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-xs"
+                          [attr.aria-label]="'Reply to ' + comment.authorName"
+                          (click)="startReply(comment)"
+                        >
+                          Reply
+                        </button>
+                      }
+                      @if (comment.isOwn) {
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-xs"
+                          [attr.aria-label]="'Edit your comment posted ' + comment.createdAgo"
+                          (click)="startEdit(comment)"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-xs text-error"
+                          [disabled]="deletingId() === comment.id"
+                          [attr.aria-label]="'Delete your comment posted ' + comment.createdAgo"
+                          (click)="deleteComment(comment.id)"
+                        >
+                          {{ deletingId() === comment.id ? 'Deleting...' : 'Delete' }}
+                        </button>
+                      }
                     </div>
                   }
                 </div>
@@ -162,6 +179,56 @@
                   >
                     {{ comment.body }}
                   </p>
+                }
+
+                @if (replyingToId() === comment.id) {
+                  <form
+                    class="mt-3 space-y-2"
+                    [formGroup]="replyForm"
+                    (ngSubmit)="submitReply(comment)"
+                  >
+                    <label class="form-control">
+                      <span class="sr-only">Reply to {{ comment.authorName }}</span>
+                      <textarea
+                        class="textarea textarea-bordered min-h-20 w-full"
+                        [class.textarea-error]="replyError()"
+                        formControlName="body"
+                        [attr.maxlength]="maxLength"
+                        [attr.aria-invalid]="replyError() ? 'true' : null"
+                        aria-describedby="reply-error-{{ comment.id }}"
+                        placeholder="Write a reply (plain text only)..."
+                      ></textarea>
+                    </label>
+
+                    <div class="flex flex-wrap items-center gap-2">
+                      <button
+                        type="submit"
+                        class="btn btn-primary btn-sm"
+                        [disabled]="replySaving() || replyForm.invalid"
+                      >
+                        @if (replySaving()) {
+                          <span class="loading loading-spinner loading-xs" aria-hidden="true"></span>
+                        }
+                        {{ replySaving() ? 'Posting...' : 'Post reply' }}
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-ghost btn-sm"
+                        [disabled]="replySaving()"
+                        (click)="cancelReply()"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+
+                    <p
+                      id="reply-error-{{ comment.id }}"
+                      role="alert"
+                      class="min-h-5 text-sm text-error"
+                    >
+                      {{ replyError() }}
+                    </p>
+                  </form>
                 }
               </div>
             </div>

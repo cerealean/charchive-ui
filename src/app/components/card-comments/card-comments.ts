@@ -38,6 +38,7 @@ export class CardCommentsComponent {
   readonly cardId = input.required<string>();
 
   protected readonly maxLength = MAX_COMMENT_LENGTH;
+  protected readonly maxReplyDepth = 3;
 
   protected readonly comments = signal<readonly CardCommentViewModel[]>([]);
   protected readonly loading = signal(false);
@@ -52,6 +53,10 @@ export class CardCommentsComponent {
   protected readonly editSaving = signal(false);
   protected readonly editError = signal('');
 
+  protected readonly replyingToId = signal<string | null>(null);
+  protected readonly replySaving = signal(false);
+  protected readonly replyError = signal('');
+
   private readonly currentUserId = signal<string | null>(null);
   private readonly currentUserAvatarUrl = signal<string | null>(null);
   private avatarObjectUrls: string[] = [];
@@ -59,6 +64,41 @@ export class CardCommentsComponent {
   protected readonly commentCount = computed(() => this.comments().length);
   protected readonly canComment = computed(() => this.currentUserId() !== null);
   protected readonly remainingChars = computed(() => this.maxLength - this.bodyLength());
+
+  // Flattens the comments into depth-first thread order: top-level comments newest
+  // first, replies oldest first beneath their parent. `canReply` depends on the
+  // current user and depth, so it is derived here where the signal is read.
+  protected readonly thread = computed(() => {
+    const loggedIn = this.currentUserId() !== null;
+    const childrenByParent = new Map<string | null, CardCommentViewModel[]>();
+
+    for (const comment of this.comments()) {
+      const siblings = childrenByParent.get(comment.parentId) ?? [];
+      siblings.push(comment);
+      childrenByParent.set(comment.parentId, siblings);
+    }
+
+    const ordered: (CardCommentViewModel & { canReply: boolean })[] = [];
+
+    const visit = (parentId: string | null, newestFirst: boolean): void => {
+      const siblings = [...(childrenByParent.get(parentId) ?? [])].sort((a, b) =>
+        newestFirst
+          ? b.createdAtIso.localeCompare(a.createdAtIso)
+          : a.createdAtIso.localeCompare(b.createdAtIso),
+      );
+
+      for (const comment of siblings) {
+        ordered.push({
+          ...comment,
+          canReply: loggedIn && comment.depth < this.maxReplyDepth,
+        });
+        visit(comment.id, false);
+      }
+    };
+
+    visit(null, true);
+    return ordered;
+  });
 
   protected readonly body = new FormControl('', {
     nonNullable: true,
@@ -82,6 +122,17 @@ export class CardCommentsComponent {
 
   protected readonly editForm = new FormGroup({ body: this.editBody });
 
+  protected readonly replyBody = new FormControl('', {
+    nonNullable: true,
+    validators: [
+      Validators.required,
+      Validators.maxLength(MAX_COMMENT_LENGTH),
+      commentContentValidator,
+    ],
+  });
+
+  protected readonly replyForm = new FormGroup({ body: this.replyBody });
+
   constructor() {
     this.destroyRef.onDestroy(() => this.revokeAvatarObjectUrls());
 
@@ -98,6 +149,10 @@ export class CardCommentsComponent {
 
     this.editBody.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.editError.set(this.editBody.dirty ? this.describeControlError(this.editBody) : '');
+    });
+
+    this.replyBody.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.replyError.set(this.replyBody.dirty ? this.describeControlError(this.replyBody) : '');
     });
   }
 
@@ -122,8 +177,8 @@ export class CardCommentsComponent {
     try {
       const record = await this.cardsService.addComment(cardId, userId, this.body.value);
       this.comments.update((current) => [
-        this.toViewModel(record, 'You', this.currentUserAvatarUrl(), true),
         ...current,
+        this.toViewModel(record, 'You', this.currentUserAvatarUrl(), true),
       ]);
       this.form.reset();
       this.bodyLength.set(0);
@@ -150,10 +205,94 @@ export class CardCommentsComponent {
     if (error) {
       this.postError.set('Unable to delete this comment. Please try again.');
     } else {
-      this.comments.update((current) => current.filter((comment) => comment.id !== commentId));
+      // The database cascades the delete to replies; mirror that in the UI so the
+      // count and thread stay accurate.
+      const removed = this.collectCommentAndDescendantIds(commentId);
+      this.comments.update((current) => current.filter((comment) => !removed.has(comment.id)));
+
+      if (this.replyingToId() && removed.has(this.replyingToId() as string)) {
+        this.cancelReply();
+      }
     }
 
     this.deletingId.set(null);
+  }
+
+  protected startReply(comment: CardCommentViewModel): void {
+    this.replyingToId.set(comment.id);
+    this.replyError.set('');
+    this.replyBody.reset('');
+  }
+
+  protected cancelReply(): void {
+    this.replyingToId.set(null);
+    this.replyError.set('');
+    this.replyBody.reset('');
+  }
+
+  protected async submitReply(parent: CardCommentViewModel): Promise<void> {
+    const userId = this.currentUserId();
+    const cardId = this.cardId();
+
+    if (!userId || this.replySaving()) {
+      return;
+    }
+
+    this.replyBody.markAsDirty();
+
+    if (this.replyForm.invalid) {
+      this.replyError.set(this.describeControlError(this.replyBody));
+      return;
+    }
+
+    this.replySaving.set(true);
+    this.replyError.set('');
+
+    try {
+      const record = await this.cardsService.addComment(
+        cardId,
+        userId,
+        this.replyBody.value,
+        parent.id,
+      );
+      this.comments.update((current) => [
+        ...current,
+        this.toViewModel(record, 'You', this.currentUserAvatarUrl(), true),
+      ]);
+      this.cancelReply();
+    } catch (error) {
+      this.replyError.set(
+        error instanceof Error ? error.message : 'Unable to post your reply. Please try again.',
+      );
+    } finally {
+      this.replySaving.set(false);
+    }
+  }
+
+  private collectCommentAndDescendantIds(rootId: string): Set<string> {
+    const childrenByParent = new Map<string | null, string[]>();
+
+    for (const comment of this.comments()) {
+      const siblings = childrenByParent.get(comment.parentId) ?? [];
+      siblings.push(comment.id);
+      childrenByParent.set(comment.parentId, siblings);
+    }
+
+    const removed = new Set<string>();
+    const stack = [rootId];
+
+    while (stack.length > 0) {
+      const id = stack.pop() as string;
+
+      if (removed.has(id)) {
+        continue;
+      }
+
+      removed.add(id);
+      stack.push(...(childrenByParent.get(id) ?? []));
+    }
+
+    return removed;
   }
 
   protected startEdit(comment: CardCommentViewModel): void {
@@ -223,6 +362,8 @@ export class CardCommentsComponent {
     this.form.reset();
     this.bodyLength.set(0);
     this.clientError.set('');
+    this.editingId.set(null);
+    this.replyingToId.set(null);
     this.revokeAvatarObjectUrls();
     this.currentUserAvatarUrl.set(null);
 
@@ -345,6 +486,8 @@ export class CardCommentsComponent {
   ): CardCommentViewModel {
     return {
       id: record.id,
+      parentId: record.parent_comment_id,
+      depth: record.depth,
       authorName,
       avatarUrl,
       body: record.body,
