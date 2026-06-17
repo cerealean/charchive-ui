@@ -22,6 +22,10 @@ When creating or updating UI components, use the Angular MCP server and the dais
 
 Use the Angular CLI to generate new Angular code, when available.
 
+### ARIA & Accessibility
+
+All UI components must use accessibility best practices so that the application is accessible to all users, including those using accessibility devices.
+
 ### TypeScript Best Practices
 
 - Use strict type checking
