@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Mock, vi } from 'vitest';
 
-import { SupabaseService } from './supabase';
+import type { SupabaseService as SupabaseServiceType } from './supabase';
 
 const { createClientMock, mockClient } = vi.hoisted(() => {
   const createClientMock = vi.fn();
@@ -24,15 +24,20 @@ vi.mock('@supabase/supabase-js', async () => {
 });
 
 describe('SupabaseService', () => {
-  let service: SupabaseService;
+  let service: SupabaseServiceType;
   let createClientSpy: Mock;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    // Re-import the service against a fresh module graph so the hoisted
+    // @supabase/supabase-js mock always binds, even when another spec file in
+    // the shared test context imported the real module first.
+    vi.resetModules();
     vi.clearAllMocks();
     createClientMock.mockReturnValue(mockClient);
     createClientSpy = createClientMock;
 
-    TestBed.configureTestingModule({});
+    const { SupabaseService } = await import('./supabase');
+    TestBed.configureTestingModule({ providers: [SupabaseService] });
     service = TestBed.inject(SupabaseService);
   });
 

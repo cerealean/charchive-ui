@@ -10,6 +10,46 @@
       </p>
     </header>
 
+    <div class="rounded-3xl border border-base-300 bg-base-100 p-4 shadow-sm sm:p-6">
+      <h2 class="sr-only">Search and filter cards</h2>
+      <div class="grid gap-4 md:grid-cols-3">
+        <label class="form-control w-full" for="card-title-search">
+          <div class="label py-1">
+            <span
+              class="label-text text-xs font-semibold uppercase tracking-wide text-base-content/70"
+              >Title</span
+            >
+          </div>
+          <input
+            id="card-title-search"
+            type="search"
+            class="input input-bordered input-sm w-full"
+            [formControl]="titleControl"
+            placeholder="Search by title"
+            autocomplete="off"
+          />
+        </label>
+
+        <app-tag-search-input
+          label="Include tags"
+          placeholder="Cards with these tags"
+          [selected]="includeTags()"
+          [unavailableIds]="excludeTagIds()"
+          (tagSelected)="onIncludeTagSelected($event)"
+          (tagRemoved)="onIncludeTagRemoved($event)"
+        />
+
+        <app-tag-search-input
+          label="Exclude tags"
+          placeholder="Hide cards with these tags"
+          [selected]="excludeTags()"
+          [unavailableIds]="includeTagIds()"
+          (tagSelected)="onExcludeTagSelected($event)"
+          (tagRemoved)="onExcludeTagRemoved($event)"
+        />
+      </div>
+    </div>
+
     @if (loading()) {
       <div role="status" class="alert alert-info alert-soft">
         <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
@@ -26,7 +66,9 @@
     @if (!loading() && !errorMessage() && !hasCards()) {
       <div class="rounded-3xl border border-dashed border-base-300 bg-base-100 p-10 text-center">
         <h2 class="text-xl font-semibold text-base-content">No cards found</h2>
-        <p class="mt-2 text-sm text-base-content/70">Try again in a little while.</p>
+        <p class="mt-2 text-sm text-base-content/70">
+          Try adjusting your search or removing some tag filters.
+        </p>
       </div>
     }
 

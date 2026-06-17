@@ -16,6 +16,9 @@ describe('CardService', () => {
   let deleteSpy: Mock;
   let maybeSingleSpy: Mock;
   let inSpy: Mock;
+  let ilikeSpy: Mock;
+  let limitSpy: Mock;
+  let rpcSpy: Mock;
 
   beforeEach(() => {
     const queryBuilder = {
@@ -28,6 +31,8 @@ describe('CardService', () => {
       delete: vi.fn(),
       maybeSingle: vi.fn(),
       in: vi.fn(),
+      ilike: vi.fn(),
+      limit: vi.fn(),
     };
 
     queryBuilder.select.mockReturnValue(queryBuilder);
@@ -39,9 +44,12 @@ describe('CardService', () => {
     queryBuilder.delete.mockReturnValue(queryBuilder);
     queryBuilder.maybeSingle.mockResolvedValue({ data: null, error: null });
     queryBuilder.in.mockResolvedValue({ data: [], error: null });
+    queryBuilder.ilike.mockReturnValue(queryBuilder);
+    queryBuilder.limit.mockReturnValue(queryBuilder);
 
     const client = {
       from: vi.fn().mockReturnValue(queryBuilder),
+      rpc: vi.fn().mockResolvedValue({ data: [], error: null }),
       storage: {
         from: vi.fn(),
       },
@@ -58,6 +66,9 @@ describe('CardService', () => {
     deleteSpy = queryBuilder.delete;
     maybeSingleSpy = queryBuilder.maybeSingle;
     inSpy = queryBuilder.in;
+    ilikeSpy = queryBuilder.ilike;
+    limitSpy = queryBuilder.limit;
+    rpcSpy = client.rpc;
 
     TestBed.configureTestingModule({
       providers: [{ provide: SupabaseService, useValue: { client } }],
@@ -70,15 +81,55 @@ describe('CardService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('publicCardsPage should only query public visibility with pagination', () => {
-    service.publicCardsPage(2, 10);
+  it('searchTags queries tags ordered by popularity then name, capped by limit', () => {
+    service.searchTags('hero', 5);
 
-    expect(fromSpy).toHaveBeenCalledWith('cards');
-    expect(selectSpy).toHaveBeenCalledWith(expect.any(String), { count: 'exact' });
-    expect(eqSpy).toHaveBeenCalledWith('visibility', 'public');
-    expect(orderSpy).toHaveBeenCalledWith('created_at', { ascending: false });
-    expect(rangeSpy).toHaveBeenCalledWith(10, 19);
+    expect(fromSpy).toHaveBeenCalledWith('tags');
+    expect(selectSpy).toHaveBeenCalledWith('id, name, slug, public_card_count');
+    expect(ilikeSpy).toHaveBeenCalledWith('name', '%hero%');
+    expect(orderSpy).toHaveBeenCalledWith('public_card_count', { ascending: false });
+    expect(orderSpy).toHaveBeenCalledWith('name', { ascending: true });
+    expect(limitSpy).toHaveBeenCalledWith(5);
     expect(returnsSpy).toHaveBeenCalled();
+  });
+
+  it('searchPublicCardsPage calls the RPC with paged offset and tag/title filters', async () => {
+    await service.searchPublicCardsPage({
+      page: 3,
+      pageSize: 10,
+      search: '  knight  ',
+      includeTagIds: ['tag-a', 'tag-b'],
+      excludeTagIds: ['tag-c'],
+    });
+
+    expect(rpcSpy).toHaveBeenCalledWith('search_public_cards', {
+      p_search: 'knight',
+      p_include_tag_ids: ['tag-a', 'tag-b'],
+      p_exclude_tag_ids: ['tag-c'],
+      p_limit: 10,
+      p_offset: 20,
+    });
+  });
+
+  it('searchPublicCardsPage sends a null title when the search is blank', async () => {
+    await service.searchPublicCardsPage({ page: 1, pageSize: 20, search: '   ' });
+
+    expect(rpcSpy).toHaveBeenCalledWith('search_public_cards', {
+      p_search: null,
+      p_include_tag_ids: [],
+      p_exclude_tag_ids: [],
+      p_limit: 20,
+      p_offset: 0,
+    });
+  });
+
+  it('searchPublicCardsPage returns an empty array when the RPC yields no data', async () => {
+    rpcSpy.mockResolvedValueOnce({ data: null, error: null });
+
+    const result = await service.searchPublicCardsPage({ page: 1, pageSize: 10 });
+
+    expect(result.data).toEqual([]);
+    expect(result.error).toBeNull();
   });
 
   it('userLikedCard returns true when a like row exists for the user', async () => {

@@ -2,18 +2,24 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   OnInit,
   PLATFORM_ID,
   computed,
   inject,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { isPlatformBrowser } from '@angular/common';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { debounceTime, distinctUntilChanged, map } from 'rxjs';
 
 import { CardPreviewCardComponent } from '../card-preview-card/card-preview-card';
-import { CardListRecord } from '../../interfaces/card-list-record.interface';
+import { TagSearchInputComponent } from '../tag-search-input/tag-search-input';
+import { CardSearchRecord } from '../../interfaces/card-search-record.interface';
 import { CardListViewModel } from '../../interfaces/card-list-view-model.interface';
+import { TagSuggestion } from '../../interfaces/tag-suggestion.interface';
 import { AuthService } from '../../services/auth';
 import { CardService } from '../../services/card';
 import { ProfileService } from '../../services/profile';
@@ -25,7 +31,7 @@ const MAX_VISIBLE_PAGE_BUTTONS = 7;
 
 @Component({
   selector: 'app-cards',
-  imports: [CardPreviewCardComponent],
+  imports: [CardPreviewCardComponent, TagSearchInputComponent, ReactiveFormsModule],
   templateUrl: './cards.html',
   styleUrl: './cards.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -36,6 +42,7 @@ export class CardsComponent implements OnInit, AfterViewInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly relativeTimeFormatter = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
 
   protected readonly loading = signal(false);
@@ -45,6 +52,27 @@ export class CardsComponent implements OnInit, AfterViewInit {
   protected readonly currentPage = signal(1);
   protected readonly totalCards = signal(0);
   protected readonly pageSizeOptions = PAGE_SIZE_OPTIONS;
+
+  protected readonly titleControl = new FormControl('', { nonNullable: true });
+  protected readonly titleSearch = signal('');
+  protected readonly includeTags = signal<readonly TagSuggestion[]>([]);
+  protected readonly excludeTags = signal<readonly TagSuggestion[]>([]);
+  protected readonly includeTagIds = computed(() => this.includeTags().map((tag) => tag.id));
+  protected readonly excludeTagIds = computed(() => this.excludeTags().map((tag) => tag.id));
+
+  constructor() {
+    this.titleControl.valueChanges
+      .pipe(
+        debounceTime(300),
+        map((value) => value.trim()),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((value) => {
+        this.titleSearch.set(value);
+        void this.resetToFirstPageAndReload();
+      });
+  }
 
   protected readonly hasCards = computed(() => this.cards().length > 0);
   protected readonly totalPages = computed(() => {
@@ -90,6 +118,31 @@ export class CardsComponent implements OnInit, AfterViewInit {
 
   protected openCard(cardId: string): void {
     void this.router.navigate(['/cards', cardId]);
+  }
+
+  protected async onIncludeTagSelected(tag: TagSuggestion): Promise<void> {
+    this.includeTags.update((tags) => [...tags, tag]);
+    await this.resetToFirstPageAndReload();
+  }
+
+  protected async onIncludeTagRemoved(tag: TagSuggestion): Promise<void> {
+    this.includeTags.update((tags) => tags.filter((existing) => existing.id !== tag.id));
+    await this.resetToFirstPageAndReload();
+  }
+
+  protected async onExcludeTagSelected(tag: TagSuggestion): Promise<void> {
+    this.excludeTags.update((tags) => [...tags, tag]);
+    await this.resetToFirstPageAndReload();
+  }
+
+  protected async onExcludeTagRemoved(tag: TagSuggestion): Promise<void> {
+    this.excludeTags.update((tags) => tags.filter((existing) => existing.id !== tag.id));
+    await this.resetToFirstPageAndReload();
+  }
+
+  private async resetToFirstPageAndReload(): Promise<void> {
+    this.currentPage.set(1);
+    await this.loadCards();
   }
 
   protected async onPageSizeChanged(event: Event): Promise<void> {
@@ -147,17 +200,20 @@ export class CardsComponent implements OnInit, AfterViewInit {
     this.errorMessage.set('');
 
     try {
-      const {
-        data: cards,
-        error: cardsError,
-        count,
-      } = await this.cardsService.publicCardsPage(this.currentPage(), this.pageSize());
+      const { data: cards, error: cardsError } = await this.cardsService.searchPublicCardsPage({
+        page: this.currentPage(),
+        pageSize: this.pageSize(),
+        search: this.titleSearch(),
+        includeTagIds: this.includeTagIds(),
+        excludeTagIds: this.excludeTagIds(),
+      });
 
       if (cardsError) {
         throw cardsError;
       }
 
-      const totalCount = count ?? 0;
+      const cardRows = cards ?? [];
+      const totalCount = cardRows[0]?.total_count ?? 0;
       this.totalCards.set(totalCount);
 
       const totalPages = Math.max(1, Math.ceil(totalCount / this.pageSize()));
@@ -167,8 +223,6 @@ export class CardsComponent implements OnInit, AfterViewInit {
         await this.loadCards();
         return;
       }
-
-      const cardRows = cards ?? [];
 
       if (cardRows.length === 0) {
         this.cards.set([]);
@@ -193,7 +247,7 @@ export class CardsComponent implements OnInit, AfterViewInit {
       const likedCardIds = await this.resolveLikedCardIds(cardRows);
 
       const viewModels: CardListViewModel[] = cardRows.map((card) => {
-        const name = card.current_version?.character_name?.trim() || card.title;
+        const name = card.character_name?.trim() || card.title;
 
         return {
           id: card.id,
@@ -206,9 +260,7 @@ export class CardsComponent implements OnInit, AfterViewInit {
           liked: likedCardIds.has(card.id),
           commentCount: card.comment_count ?? 0,
           imageUrl: imageUrlByCardId.get(card.id) ?? null,
-          tags: card.tags
-            .map((tagRecord) => tagRecord.tag)
-            .filter((tag): tag is { slug: string; name: string } => tag !== null),
+          tags: card.tags.map((tag) => ({ slug: tag.slug, name: tag.name })),
         };
       });
 
@@ -279,7 +331,7 @@ export class CardsComponent implements OnInit, AfterViewInit {
     }
   }
 
-  private async resolveLikedCardIds(cards: readonly CardListRecord[]): Promise<Set<string>> {
+  private async resolveLikedCardIds(cards: readonly CardSearchRecord[]): Promise<Set<string>> {
     const user = await this.auth.getUser();
 
     if (!user || cards.length === 0) {
@@ -297,11 +349,11 @@ export class CardsComponent implements OnInit, AfterViewInit {
   }
 
   private async resolveCardImageUrls(
-    cards: readonly CardListRecord[],
+    cards: readonly CardSearchRecord[],
   ): Promise<Map<string, string>> {
     const entries = await Promise.all(
       cards.map(async (card) => {
-        const storagePath = card.avatar_file?.storage_path;
+        const storagePath = card.storage_path;
 
         if (!storagePath) {
           return [card.id, null] as const;

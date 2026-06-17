@@ -2,9 +2,18 @@ import { Injectable, inject } from '@angular/core';
 
 import { CardCommentRecord } from '../interfaces/card-comment-record.interface';
 import { CardDetailRecord } from '../interfaces/card-detail-record.interface';
-import { CardListRecord } from '../interfaces/card-list-record.interface';
+import { CardSearchRecord } from '../interfaces/card-search-record.interface';
+import { TagSuggestion } from '../interfaces/tag-suggestion.interface';
 import { validateCommentContent } from '../shared/comment-validation';
 import { SupabaseService } from './supabase';
+
+export interface CardSearchParams {
+  page: number;
+  pageSize: number;
+  search?: string | null;
+  includeTagIds?: readonly string[];
+  excludeTagIds?: readonly string[];
+}
 
 interface OwnedCardListRecord {
   id: string;
@@ -304,42 +313,34 @@ export class CardService {
     return error;
   }
 
-  publicCardsPage(page: number, pageSize: number) {
-    const safePage = Math.max(1, Math.trunc(page));
-    const safePageSize = Math.max(1, Math.trunc(pageSize));
-    const from = (safePage - 1) * safePageSize;
-    const to = from + safePageSize - 1;
-
+  searchTags(term: string, limit = 10) {
     return this.supabase.client
-      .from('cards')
-      .select(
-        `
-          id,
-          owner_id,
-          title,
-          tagline,
-          created_at,
-          like_count,
-          comment_count,
-          current_version:card_versions!cards_current_version_id_fkey(
-            character_name
-          ),
-          avatar_file:card_files!cards_avatar_file_id_fkey(
-            storage_path
-          ),
-          tags:card_tags(
-            tag:tags(
-              name,
-              slug
-            )
-          )
-        `,
-        { count: 'exact' },
-      )
-      .eq('visibility', 'public')
-      .order('created_at', { ascending: false })
-      .range(from, to)
-      .returns<CardListRecord[]>();
+      .from('tags')
+      .select('id, name, slug, public_card_count')
+      .ilike('name', `%${term}%`)
+      .order('public_card_count', { ascending: false })
+      .order('name', { ascending: true })
+      .limit(limit)
+      .returns<TagSuggestion[]>();
+  }
+
+  async searchPublicCardsPage(
+    params: CardSearchParams,
+  ): Promise<{ data: CardSearchRecord[]; error: unknown }> {
+    const safePage = Math.max(1, Math.trunc(params.page));
+    const safePageSize = Math.max(1, Math.trunc(params.pageSize));
+    const offset = (safePage - 1) * safePageSize;
+    const search = params.search?.trim();
+
+    const { data, error } = await this.supabase.client.rpc('search_public_cards', {
+      p_search: search ? search : null,
+      p_include_tag_ids: [...(params.includeTagIds ?? [])],
+      p_exclude_tag_ids: [...(params.excludeTagIds ?? [])],
+      p_limit: safePageSize,
+      p_offset: offset,
+    });
+
+    return { data: (data ?? []) as CardSearchRecord[], error };
   }
 
   async createCardFileSignedUrl(path: string, expiresInSeconds = 3600) {

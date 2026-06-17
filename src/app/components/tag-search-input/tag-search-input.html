@@ -1,0 +1,77 @@
+<div class="form-control w-full">
+  <label class="label py-1" [for]="inputId">
+    <span class="label-text text-xs font-semibold uppercase tracking-wide text-base-content/70">{{
+      label()
+    }}</span>
+  </label>
+
+  @if (selected().length > 0) {
+    <ul class="mb-2 flex flex-wrap gap-1.5" [attr.aria-label]="label() + ' selected'">
+      @for (tag of selected(); track tag.id) {
+        <li>
+          <span class="badge badge-primary badge-sm gap-1">
+            <span>{{ tag.name }}</span>
+            <button
+              type="button"
+              class="grid size-3.5 place-items-center rounded-full leading-none hover:bg-primary-content/20"
+              (click)="removeTag(tag)"
+              [attr.aria-label]="'Remove ' + tag.name"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </span>
+        </li>
+      }
+    </ul>
+  }
+
+  <div class="relative">
+    <input
+      [id]="inputId"
+      type="text"
+      role="combobox"
+      class="input input-bordered input-sm w-full"
+      [formControl]="searchControl"
+      [placeholder]="placeholder()"
+      autocomplete="off"
+      aria-autocomplete="list"
+      [attr.aria-expanded]="open()"
+      [attr.aria-controls]="listboxId"
+      [attr.aria-activedescendant]="activeDescendant()"
+      (focus)="onFocus()"
+      (blur)="onBlur()"
+      (keydown)="onKeydown($event)"
+    />
+
+    <ul
+      [id]="listboxId"
+      role="listbox"
+      [attr.aria-label]="label() + ' suggestions'"
+      class="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-box border border-base-300 bg-base-100 p-1 shadow-lg"
+      [class.hidden]="!open()"
+    >
+      @if (open()) {
+        @if (loading()) {
+          <li class="px-3 py-2 text-sm text-base-content/60">Searching&hellip;</li>
+        } @else if (visibleSuggestions().length === 0) {
+          <li class="px-3 py-2 text-sm text-base-content/60">No tags found</li>
+        } @else {
+          @for (tag of visibleSuggestions(); track tag.id; let i = $index) {
+            <li
+              role="option"
+              [id]="optionId(i)"
+              [attr.aria-selected]="i === activeIndex()"
+              class="flex cursor-pointer items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm"
+              [class.bg-base-200]="i === activeIndex()"
+              (mousedown)="$event.preventDefault()"
+              (click)="selectTag(tag)"
+            >
+              <span class="truncate">{{ tag.name }}</span>
+              <span class="badge badge-ghost badge-xs">{{ tag.public_card_count }}</span>
+            </li>
+          }
+        }
+      }
+    </ul>
+  </div>
+</div>
