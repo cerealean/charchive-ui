@@ -21,7 +21,10 @@
       "WebFetch(domain:supabase.com)",
       "WebFetch(domain:angular.io)",
       "WebFetch(domain:tailwindcss.com)",
-      "WebFetch(domain:localhost:4200)"
+      "WebFetch(domain:localhost:4200)",
+      "WebFetch(domain:localhost:54323)",
+      "WebFetch(domain:localhost:54324)",
+      "WebFetch(domain:localhost:54321)"
     ]
   }
 }
