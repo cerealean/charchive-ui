@@ -38,7 +38,11 @@
         Uploaded by <span class="font-semibold">{{ card().uploader }}</span>
       </p>
       <p class="flex items-center gap-2 text-xs text-base-content/60">
-        <span>{{ card().createdAgo }}</span>
+        <time
+          [attr.datetime]="card().createdAtIso"
+          [title]="card().createdAtIso | date: 'medium'"
+          >{{ card().createdAgo }}</time
+        >
         <span aria-hidden="true">·</span>
         <span class="inline-flex items-center gap-1" [class.text-error]="card().liked">
           <svg
