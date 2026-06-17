@@ -10,7 +10,7 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        loadComponent: () => import('./components/landing/landing').then((m) => m.Landing),
+        loadComponent: () => import('./components/cards/cards').then((m) => m.CardsComponent),
       },
       {
         path: 'login',
@@ -46,7 +46,8 @@ export const routes: Routes = [
       },
       {
         path: 'cards',
-        loadComponent: () => import('./components/cards/cards').then((m) => m.CardsComponent),
+        redirectTo: '',
+        pathMatch: 'full',
       },
       {
         path: 'cards/:id',
