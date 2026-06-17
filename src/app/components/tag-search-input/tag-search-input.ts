@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { debounceTime, distinctUntilChanged, from, map, of, switchMap } from 'rxjs';
+import { Subject, debounceTime, from, map, merge, switchMap } from 'rxjs';
 
 import { TagSuggestion } from '../../interfaces/tag-suggestion.interface';
 import { CardService } from '../../services/card';
@@ -44,6 +44,7 @@ export class TagSearchInputComponent {
   protected readonly open = signal(false);
   protected readonly activeIndex = signal(-1);
   private readonly suggestions = signal<readonly TagSuggestion[]>([]);
+  private readonly focusRequests = new Subject<void>();
 
   private readonly excludedIds = computed(
     () => new Set<string>([...this.selected().map((tag) => tag.id), ...this.unavailableIds()]),
@@ -62,29 +63,30 @@ export class TagSearchInputComponent {
   });
 
   constructor() {
-    this.searchControl.valueChanges
+    // An empty term still queries: searchTags('') returns the most popular tags,
+    // so focusing the field with nothing typed shows suggestions. Typing then
+    // narrows the same list. Focus reuses any cached suggestions to avoid a
+    // redundant fetch.
+    merge(
+      this.searchControl.valueChanges.pipe(debounceTime(250)),
+      this.focusRequests.pipe(map(() => this.searchControl.value)),
+    )
       .pipe(
-        debounceTime(250),
         map((term) => term.trim()),
-        distinctUntilChanged(),
         switchMap((term) => {
-          if (term.length === 0) {
-            return of({ term, tags: [] as TagSuggestion[] });
-          }
-
           this.loading.set(true);
 
           return from(Promise.resolve(this.cards.searchTags(term))).pipe(
-            map((result) => ({ term, tags: result.data ?? [] })),
+            map((result) => result.data ?? []),
           );
         }),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe(({ term, tags }) => {
+      .subscribe((tags) => {
         this.loading.set(false);
         this.suggestions.set(tags);
         this.activeIndex.set(-1);
-        this.open.set(term.length > 0);
+        this.open.set(true);
       });
   }
 
@@ -93,8 +95,14 @@ export class TagSearchInputComponent {
   }
 
   protected onFocus(): void {
-    if (this.searchControl.value.trim().length > 0) {
+    this.openSuggestions();
+  }
+
+  private openSuggestions(): void {
+    if (this.suggestions().length > 0) {
       this.open.set(true);
+    } else {
+      this.focusRequests.next();
     }
   }
 
@@ -109,7 +117,7 @@ export class TagSearchInputComponent {
       event.preventDefault();
 
       if (!this.open()) {
-        this.open.set(this.searchControl.value.trim().length > 0);
+        this.openSuggestions();
         return;
       }
 

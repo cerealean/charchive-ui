@@ -51,6 +51,33 @@ describe('TagSearchInputComponent', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
+  it('shows the most popular tags on focus before anything is typed', async () => {
+    const input = element.querySelector('input') as HTMLInputElement;
+    input.dispatchEvent(new Event('focus'));
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(searchTerms).toEqual(['']);
+    expect(element.querySelectorAll('[role="option"]').length).toBe(2);
+  });
+
+  it('reuses cached suggestions on refocus without re-querying', async () => {
+    const input = element.querySelector('input') as HTMLInputElement;
+    input.dispatchEvent(new Event('focus'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    input.dispatchEvent(new Event('blur'));
+    fixture.detectChanges();
+    input.dispatchEvent(new Event('focus'));
+    fixture.detectChanges();
+
+    expect(searchTerms).toEqual(['']);
+    expect(element.querySelectorAll('[role="option"]').length).toBe(2);
+  });
+
   it('debounces input, queries searchTags, and renders suggestions', async () => {
     typeQuery('a');
     expect(searchTerms).toEqual([]);
