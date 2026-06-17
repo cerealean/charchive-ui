@@ -5,43 +5,42 @@
     }}</span>
   </label>
 
-  @if (selected().length > 0) {
-    <ul class="mb-2 flex flex-wrap gap-1.5" [attr.aria-label]="label() + ' selected'">
-      @for (tag of selected(); track tag.id) {
-        <li>
-          <span class="badge badge-primary badge-sm gap-1">
-            <span>{{ tag.name }}</span>
-            <button
-              type="button"
-              class="grid size-3.5 place-items-center rounded-full leading-none hover:bg-primary-content/20"
-              (click)="removeTag(tag)"
-              [attr.aria-label]="'Remove ' + tag.name"
-            >
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </span>
-        </li>
-      }
-    </ul>
-  }
-
   <div class="relative">
-    <input
-      [id]="inputId"
-      type="text"
-      role="combobox"
-      class="input input-bordered input-sm w-full"
-      [formControl]="searchControl"
-      [placeholder]="placeholder()"
-      autocomplete="off"
-      aria-autocomplete="list"
-      [attr.aria-expanded]="open()"
-      [attr.aria-controls]="listboxId"
-      [attr.aria-activedescendant]="activeDescendant()"
-      (focus)="onFocus()"
-      (blur)="onBlur()"
-      (keydown)="onKeydown($event)"
-    />
+    <div
+      class="input input-bordered input-sm flex h-auto min-h-8 w-full flex-wrap items-center gap-1.5 py-1"
+      (click)="focusInput()"
+    >
+      @for (tag of selected(); track tag.id) {
+        <span class="badge badge-primary badge-sm gap-1">
+          <span>{{ tag.name }}</span>
+          <button
+            type="button"
+            class="grid size-3.5 place-items-center rounded-full leading-none hover:bg-primary-content/20"
+            (click)="removeTag(tag); $event.stopPropagation()"
+            [attr.aria-label]="'Remove ' + tag.name"
+          >
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </span>
+      }
+      <input
+        #queryInput
+        [id]="inputId"
+        type="text"
+        role="combobox"
+        class="min-w-24 flex-1 border-0 bg-transparent p-0 text-sm focus:outline-none"
+        [formControl]="searchControl"
+        [placeholder]="selected().length === 0 ? placeholder() : ''"
+        autocomplete="off"
+        aria-autocomplete="list"
+        [attr.aria-expanded]="open()"
+        [attr.aria-controls]="listboxId"
+        [attr.aria-activedescendant]="activeDescendant()"
+        (focus)="onFocus()"
+        (blur)="onBlur()"
+        (keydown)="onKeydown($event)"
+      />
+    </div>
 
     <ul
       [id]="listboxId"

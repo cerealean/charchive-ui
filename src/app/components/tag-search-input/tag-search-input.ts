@@ -2,11 +2,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   computed,
   inject,
   input,
   output,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -34,6 +36,8 @@ export class TagSearchInputComponent {
 
   readonly tagSelected = output<TagSuggestion>();
   readonly tagRemoved = output<TagSuggestion>();
+
+  private readonly queryInput = viewChild<ElementRef<HTMLInputElement>>('queryInput');
 
   private readonly instanceId = (uniqueInstanceCount += 1);
   protected readonly inputId = `tag-search-input-${this.instanceId}`;
@@ -96,6 +100,10 @@ export class TagSearchInputComponent {
 
   protected onFocus(): void {
     this.openSuggestions();
+  }
+
+  protected focusInput(): void {
+    this.queryInput()?.nativeElement.focus();
   }
 
   private openSuggestions(): void {
