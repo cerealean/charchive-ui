@@ -18,7 +18,10 @@
       "Bash(npx ng build:*)",
       "Bash(npx ng test:*)",
       "Bash(npx ng lint:*)",
-      "WebFetch(domain:supabase.com)"
+      "WebFetch(domain:supabase.com)",
+      "WebFetch(domain:angular.io)",
+      "WebFetch(domain:tailwindcss.com)",
+      "WebFetch(domain:localhost:4200)"
     ]
   }
 }
