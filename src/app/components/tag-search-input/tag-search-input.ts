@@ -157,10 +157,13 @@ export class TagSearchInputComponent {
 
   protected selectTag(tag: TagSuggestion): void {
     this.tagSelected.emit(tag);
+    // Keep the list open so several tags can be picked in a row. Clear the typed
+    // query and refresh suggestions; the just-selected tag drops out of the list
+    // via visibleSuggestions once the parent updates its selection.
     this.searchControl.setValue('', { emitEvent: false });
-    this.suggestions.set([]);
     this.activeIndex.set(-1);
-    this.open.set(false);
+    this.focusInput();
+    this.focusRequests.next();
   }
 
   protected removeTag(tag: TagSuggestion): void {

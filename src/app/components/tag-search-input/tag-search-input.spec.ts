@@ -90,7 +90,7 @@ describe('TagSearchInputComponent', () => {
     expect(options[0].textContent).toContain('Adventure');
   });
 
-  it('emits tagSelected and clears the query when an option is clicked', async () => {
+  it('emits tagSelected, clears the query, and keeps the list open for more picks', async () => {
     const selected: TagSuggestion[] = [];
     fixture.componentInstance.tagSelected.subscribe((tag) => selected.push(tag));
 
@@ -100,12 +100,14 @@ describe('TagSearchInputComponent', () => {
     const firstOption = element.querySelector('[role="option"]') as HTMLElement;
     firstOption.dispatchEvent(new MouseEvent('mousedown'));
     firstOption.click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
+    await fixture.whenStable();
 
     expect(selected).toEqual([tagA]);
     const input = element.querySelector('input') as HTMLInputElement;
     expect(input.value).toBe('');
-    expect(element.querySelectorAll('[role="option"]').length).toBe(0);
+    expect(element.querySelectorAll('[role="option"]').length).toBeGreaterThan(0);
   });
 
   it('does not suggest tags already selected or unavailable', async () => {
