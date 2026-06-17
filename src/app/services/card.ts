@@ -165,7 +165,9 @@ export class CardService {
   commentsForCard(cardId: string) {
     return this.supabase.client
       .from('card_comments')
-      .select('id, author_id, parent_comment_id, depth, body, created_at, updated_at, deleted_at')
+      .select(
+        'id, author_id, parent_comment_id, depth, body, like_count, created_at, updated_at, deleted_at',
+      )
       .eq('card_id', cardId)
       .order('created_at', { ascending: false })
       .returns<CardCommentRecord[]>();
@@ -191,7 +193,9 @@ export class CardService {
         parent_comment_id: parentCommentId,
         body: validation.value,
       })
-      .select('id, author_id, parent_comment_id, depth, body, created_at, updated_at, deleted_at')
+      .select(
+        'id, author_id, parent_comment_id, depth, body, like_count, created_at, updated_at, deleted_at',
+      )
       .single<CardCommentRecord>();
 
     if (error) {
@@ -212,7 +216,9 @@ export class CardService {
       .from('card_comments')
       .update({ body: validation.value })
       .eq('id', commentId)
-      .select('id, author_id, parent_comment_id, depth, body, created_at, updated_at, deleted_at')
+      .select(
+        'id, author_id, parent_comment_id, depth, body, like_count, created_at, updated_at, deleted_at',
+      )
       .single<CardCommentRecord>();
 
     if (error) {
@@ -237,6 +243,41 @@ export class CardService {
     const action = result.action === 'soft' || result.action === 'hard' ? result.action : 'none';
 
     return { action, removedIds: result.removed_ids ?? [] };
+  }
+
+  likeComment(commentId: string, userId: string) {
+    return this.supabase.client
+      .from('card_comment_likes')
+      .upsert(
+        { comment_id: commentId, user_id: userId },
+        { onConflict: 'comment_id,user_id', ignoreDuplicates: true },
+      );
+  }
+
+  unlikeComment(commentId: string, userId: string) {
+    return this.supabase.client
+      .from('card_comment_likes')
+      .delete()
+      .eq('comment_id', commentId)
+      .eq('user_id', userId);
+  }
+
+  async likedCommentIds(commentIds: readonly string[], userId: string): Promise<Set<string>> {
+    if (commentIds.length === 0) {
+      return new Set();
+    }
+
+    const { data, error } = await this.supabase.client
+      .from('card_comment_likes')
+      .select('comment_id')
+      .eq('user_id', userId)
+      .in('comment_id', [...commentIds]);
+
+    if (error) {
+      throw error;
+    }
+
+    return new Set((data ?? []).map((row) => row.comment_id as string));
   }
 
   private normalizeCommentError(error: unknown): Error {

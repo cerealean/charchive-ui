@@ -10,4 +10,6 @@ export interface CardCommentViewModel {
   edited: boolean;
   isOwn: boolean;
   isDeleted: boolean;
+  likeCount: number;
+  likedByMe: boolean;
 }

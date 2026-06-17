@@ -49,6 +49,7 @@ export class CardCommentsComponent {
   protected readonly postError = signal('');
   protected readonly posting = signal(false);
   protected readonly deletingId = signal<string | null>(null);
+  protected readonly likePendingIds = signal<ReadonlySet<string>>(new Set());
   protected readonly bodyLength = signal(0);
   protected readonly clientError = signal('');
 
@@ -233,6 +234,56 @@ export class CardCommentsComponent {
     }
   }
 
+  protected async toggleLike(comment: CardCommentViewModel): Promise<void> {
+    const userId = this.currentUserId();
+
+    if (!userId || comment.isDeleted || this.likePendingIds().has(comment.id)) {
+      return;
+    }
+
+    const wasLiked = comment.likedByMe;
+    this.setLikePending(comment.id, true);
+    this.applyLikeState(comment.id, !wasLiked);
+
+    const { error } = wasLiked
+      ? await this.cardsService.unlikeComment(comment.id, userId)
+      : await this.cardsService.likeComment(comment.id, userId);
+
+    if (error) {
+      this.applyLikeState(comment.id, wasLiked);
+    }
+
+    this.setLikePending(comment.id, false);
+  }
+
+  private applyLikeState(commentId: string, liked: boolean): void {
+    this.comments.update((current) =>
+      current.map((comment) =>
+        comment.id === commentId
+          ? {
+              ...comment,
+              likedByMe: liked,
+              likeCount: Math.max(0, comment.likeCount + (liked ? 1 : -1)),
+            }
+          : comment,
+      ),
+    );
+  }
+
+  private setLikePending(commentId: string, pending: boolean): void {
+    this.likePendingIds.update((current) => {
+      const next = new Set(current);
+
+      if (pending) {
+        next.add(commentId);
+      } else {
+        next.delete(commentId);
+      }
+
+      return next;
+    });
+  }
+
   protected startReply(comment: CardCommentViewModel): void {
     this.replyingToId.set(comment.id);
     this.replyError.set('');
@@ -374,6 +425,7 @@ export class CardCommentsComponent {
 
       const rows = comments ?? [];
       const authors = await this.resolveAuthorProfiles(rows, user?.id ?? null);
+      const likedCommentIds = await this.resolveLikedCommentIds(rows, user?.id ?? null);
 
       this.currentUserAvatarUrl.set(user ? (authors.avatarById.get(user.id) ?? null) : null);
 
@@ -384,6 +436,7 @@ export class CardCommentsComponent {
             authors.nameById.get(row.author_id) ?? 'Unknown user',
             authors.avatarById.get(row.author_id) ?? null,
             row.author_id === user?.id,
+            likedCommentIds.has(row.id),
           ),
         ),
       );
@@ -439,6 +492,26 @@ export class CardCommentsComponent {
     return { nameById, avatarById };
   }
 
+  private async resolveLikedCommentIds(
+    rows: readonly CardCommentRecord[],
+    currentUserId: string | null,
+  ): Promise<Set<string>> {
+    if (!currentUserId) {
+      return new Set();
+    }
+
+    const likeableIds = rows
+      .filter((row) => row.deleted_at === null)
+      .map((row) => row.id);
+
+    try {
+      return await this.cardsService.likedCommentIds(likeableIds, currentUserId);
+    } catch {
+      // Like state is non-critical; fall back to "not liked" if the lookup fails.
+      return new Set();
+    }
+  }
+
   private async resolveAvatarObjectUrl(path: string | null | undefined): Promise<string | null> {
     if (!path) {
       return null;
@@ -472,6 +545,7 @@ export class CardCommentsComponent {
     authorName: string,
     avatarUrl: string | null,
     isOwn: boolean,
+    likedByMe = false,
   ): CardCommentViewModel {
     return {
       id: record.id,
@@ -485,6 +559,8 @@ export class CardCommentsComponent {
       edited: record.deleted_at === null && record.updated_at !== record.created_at,
       isOwn,
       isDeleted: record.deleted_at !== null,
+      likeCount: record.like_count,
+      likedByMe,
     };
   }
 

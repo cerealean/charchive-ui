@@ -156,4 +156,54 @@ describe('CardService', () => {
 
     await expect(service.likedCardIds(['card-1'], 'user-1')).rejects.toBe(queryError);
   });
+
+  it('likeComment upserts the like keyed on the comment/user pair', () => {
+    service.likeComment('comment-1', 'user-1');
+
+    expect(fromSpy).toHaveBeenCalledWith('card_comment_likes');
+    expect(upsertSpy).toHaveBeenCalledWith(
+      { comment_id: 'comment-1', user_id: 'user-1' },
+      { onConflict: 'comment_id,user_id', ignoreDuplicates: true },
+    );
+  });
+
+  it('unlikeComment deletes the matching like row', () => {
+    service.unlikeComment('comment-1', 'user-1');
+
+    expect(fromSpy).toHaveBeenCalledWith('card_comment_likes');
+    expect(deleteSpy).toHaveBeenCalled();
+    expect(eqSpy).toHaveBeenCalledWith('comment_id', 'comment-1');
+    expect(eqSpy).toHaveBeenCalledWith('user_id', 'user-1');
+  });
+
+  it('likedCommentIds returns the set of comments the user has liked', async () => {
+    inSpy.mockResolvedValueOnce({
+      data: [{ comment_id: 'comment-1' }, { comment_id: 'comment-3' }],
+      error: null,
+    });
+
+    const liked = await service.likedCommentIds(
+      ['comment-1', 'comment-2', 'comment-3'],
+      'user-1',
+    );
+
+    expect(fromSpy).toHaveBeenCalledWith('card_comment_likes');
+    expect(eqSpy).toHaveBeenCalledWith('user_id', 'user-1');
+    expect(inSpy).toHaveBeenCalledWith('comment_id', ['comment-1', 'comment-2', 'comment-3']);
+    expect(liked).toEqual(new Set(['comment-1', 'comment-3']));
+  });
+
+  it('likedCommentIds short-circuits without querying when no comment ids are given', async () => {
+    const liked = await service.likedCommentIds([], 'user-1');
+
+    expect(liked.size).toBe(0);
+    expect(inSpy).not.toHaveBeenCalled();
+  });
+
+  it('likedCommentIds rejects when the query errors', async () => {
+    const queryError = new Error('boom');
+    inSpy.mockResolvedValueOnce({ data: null, error: queryError });
+
+    await expect(service.likedCommentIds(['comment-1'], 'user-1')).rejects.toBe(queryError);
+  });
 });
