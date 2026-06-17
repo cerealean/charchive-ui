@@ -15,7 +15,7 @@
       "npx vitest run:*",
       "Bash(npm run build:*)",
       "Bash(npm run test:*)",
-      "Bash(npm run test-once:*)",
+      "Bash(npm run test:once:*)",
       "Bash(npm run lint:*)",
       "Bash(npx ng build:*)",
       "Bash(npx ng test:*)",
