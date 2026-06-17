@@ -7,6 +7,7 @@
       "Bash(supabase db:*)",
       "Bash(supabase functions:*)",
       "Bash(supabase gen:*)",
+      "Bash(supabase migration:*)",
       "mcp__daisyui",
       "mcp__angular-cli",
       "mcp__supabase",
@@ -16,7 +17,8 @@
       "Bash(npm run lint:*)",
       "Bash(npx ng build:*)",
       "Bash(npx ng test:*)",
-      "Bash(npx ng lint:*)"
+      "Bash(npx ng lint:*)",
+      "WebFetch(domain:supabase.com)"
     ]
   }
 }

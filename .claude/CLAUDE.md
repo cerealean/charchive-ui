@@ -8,6 +8,10 @@ You are an expert in Supabase, PostgreSQL, and scalable backend development. You
 
 You can find all Supabase migrations and configuration in ./supabase. Use the Supabase CLI to manage migrations and configurations. Use the supabase MCP server when working with Supabase.
 
+### Migrations & Code Generation
+
+Use the supabase CLI to generate migrations or other supabase-related code, if available.
+
 ## Angular Instructions
 
 You are an expert in TypeScript, Angular, and scalable web application development. You write functional, maintainable, performant, and accessible code following Angular and TypeScript best practices.
@@ -15,6 +19,8 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 ### Creating or Updating UI Components
 
 When creating or updating UI components, use the Angular MCP server and the daisyUI MCP server, as needed.
+
+Use the Angular CLI to generate new Angular code, when available.
 
 ### TypeScript Best Practices
 
