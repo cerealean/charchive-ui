@@ -44,6 +44,7 @@ export class CardsComponent implements OnInit, AfterViewInit {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly destroyRef = inject(DestroyRef);
   private readonly relativeTimeFormatter = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+  private readonly signedImageUrlCache = new Map<string, string>();
 
   protected readonly loading = signal(false);
   protected readonly errorMessage = signal('');
@@ -359,13 +360,20 @@ export class CardsComponent implements OnInit, AfterViewInit {
           return [card.id, null] as const;
         }
 
+        const cachedUrl = this.signedImageUrlCache.get(storagePath);
+
+        if (cachedUrl) {
+          return [card.id, cachedUrl] as const;
+        }
+
         const { data, error } = await this.cardsService.createCardFileSignedUrl(storagePath, 3600);
 
-        if (error) {
+        if (error || !data?.signedUrl) {
           return [card.id, null] as const;
         }
 
-        return [card.id, data?.signedUrl ?? null] as const;
+        this.signedImageUrlCache.set(storagePath, data.signedUrl);
+        return [card.id, data.signedUrl] as const;
       }),
     );
 

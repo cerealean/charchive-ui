@@ -15,6 +15,7 @@ describe('CardsComponent', () => {
   let fixture: ComponentFixture<CardsComponent>;
   let searchCalls: CardSearchParams[];
   let searchResult: CardSearchRecord[];
+  let signCalls: string[];
 
   const cardServiceMock = {
     searchPublicCardsPage: (params: CardSearchParams) => {
@@ -23,7 +24,10 @@ describe('CardsComponent', () => {
     },
     searchTags: () => ({ data: [], error: null }),
     likedCardIds: async () => new Set<string>(),
-    createCardFileSignedUrl: async () => ({ data: null, error: null }),
+    createCardFileSignedUrl: async (path: string) => {
+      signCalls.push(path);
+      return { data: { signedUrl: `https://signed/${path}` }, error: null };
+    },
   } as unknown as CardService;
 
   const profileServiceMock = {
@@ -56,6 +60,7 @@ describe('CardsComponent', () => {
   beforeEach(async () => {
     searchCalls = [];
     searchResult = [];
+    signCalls = [];
 
     await TestBed.configureTestingModule({
       imports: [CardsComponent],
@@ -114,5 +119,18 @@ describe('CardsComponent', () => {
     const lastCall = searchCalls[searchCalls.length - 1];
     expect(lastCall.page).toBe(1);
     expect(lastCall.includeTagIds).toEqual(['tag-1']);
+  });
+
+  it('reuses a cached signed image URL across reloads to avoid image flicker', async () => {
+    searchResult = [buildCard({ storage_path: 'cards/owner-1/card-1.png' })];
+    fixture.detectChanges();
+    await flushLoad();
+
+    const includeInput = fixture.debugElement.queryAll(By.directive(TagSearchInputComponent))[0]
+      .componentInstance as TagSearchInputComponent;
+    includeInput.tagSelected.emit({ id: 'tag-1', name: 'Hero', slug: 'hero', public_card_count: 5 });
+    await flushLoad();
+
+    expect(signCalls.filter((path) => path === 'cards/owner-1/card-1.png').length).toBe(1);
   });
 });

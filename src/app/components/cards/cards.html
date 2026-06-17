@@ -50,7 +50,7 @@
       </div>
     </div>
 
-    @if (loading()) {
+    @if (loading() && !hasCards()) {
       <div role="status" class="alert alert-info alert-soft">
         <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
         <span>Loading cards...</span>
@@ -133,7 +133,11 @@
         </div>
       </div>
 
-      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+      <div
+        class="grid gap-4 transition-opacity md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+        [class.opacity-60]="loading()"
+        [attr.aria-busy]="loading()"
+      >
         @for (card of cards(); track card.id) {
           <app-card-preview-card
             [card]="card"
