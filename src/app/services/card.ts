@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Service, inject } from '@angular/core';
 
 import { CardCommentRecord } from '../interfaces/card-comment-record.interface';
 import { CardDetailRecord } from '../interfaces/card-detail-record.interface';
@@ -62,9 +62,7 @@ interface PngTextEntry {
   value: string | null;
 }
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class CardService {
   private readonly supabase = inject(SupabaseService);
 

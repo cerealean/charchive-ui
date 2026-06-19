@@ -1,12 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  DestroyRef,
-  EventEmitter,
-  Input,
-  Output,
-} from '@angular/core';
+import { Component, DestroyRef, effect, inject, input, output, signal } from '@angular/core';
 import { SafeResourceUrl, DomSanitizer } from '@angular/platform-browser';
 import { ProfileService } from '../../services/profile';
 
@@ -14,40 +6,34 @@ import { ProfileService } from '../../services/profile';
   selector: 'app-avatar',
   templateUrl: './avatar.html',
   styleUrls: ['./avatar.css'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AvatarComponent {
-  _avatarUrl: SafeResourceUrl | undefined;
-  private avatarObjectUrl: string | null = null;
-  private currentAvatarPath: string | null = null;
-  uploading = false;
-  errorMessage = '';
+  private readonly profiles = inject(ProfileService);
+  private readonly dom = inject(DomSanitizer);
+  private readonly destroyRef = inject(DestroyRef);
+
+  readonly avatarUrl = input<string | null>(null);
+  readonly userId = input<string | null>(null);
+  readonly upload = output<string>();
+
+  protected readonly imageUrl = signal<SafeResourceUrl | undefined>(undefined);
+  protected readonly uploading = signal(false);
+  readonly errorMessage = signal('');
   readonly fileInputId = `avatar-upload-${Math.random().toString(36).slice(2, 10)}`;
 
-  @Input()
-  set avatarUrl(url: string | null) {
-    this.currentAvatarPath = url ?? null;
+  private avatarObjectUrl: string | null = null;
 
-    if (url) {
-      this.downloadImage(url);
-      return;
-    }
+  constructor() {
+    effect(() => {
+      const path = this.avatarUrl();
 
-    this.revokeAvatarObjectUrl();
-    this._avatarUrl = undefined;
-    this.detectChangesSafely();
-  }
+      if (path) {
+        this.downloadImage(path);
+      } else {
+        this.clearAvatar();
+      }
+    });
 
-  @Input() userId: string | null = null;
-
-  @Output() upload = new EventEmitter<string>();
-
-  constructor(
-    private readonly profiles: ProfileService,
-    private readonly dom: DomSanitizer,
-    private readonly cdr: ChangeDetectorRef,
-    private readonly destroyRef: DestroyRef,
-  ) {
     this.destroyRef.onDestroy(() => {
       this.revokeAvatarObjectUrl();
     });
@@ -59,8 +45,7 @@ export class AvatarComponent {
       if (data instanceof Blob) {
         this.revokeAvatarObjectUrl();
         this.avatarObjectUrl = URL.createObjectURL(data);
-        this._avatarUrl = this.dom.bypassSecurityTrustResourceUrl(this.avatarObjectUrl);
-        this.detectChangesSafely();
+        this.imageUrl.set(this.dom.bypassSecurityTrustResourceUrl(this.avatarObjectUrl));
       }
     } catch (error) {
       if (error instanceof Error) {
@@ -70,10 +55,10 @@ export class AvatarComponent {
   }
 
   async uploadAvatar(event: Event) {
-    this.errorMessage = '';
+    this.errorMessage.set('');
 
     try {
-      this.uploading = true;
+      this.uploading.set(true);
       const target = event.target as HTMLInputElement | null;
       const file = target?.files?.item(0);
 
@@ -81,13 +66,14 @@ export class AvatarComponent {
         throw new Error('You must select an image to upload.');
       }
 
-      if (!this.userId) {
+      const userId = this.userId();
+      if (!userId) {
         throw new Error('You must be signed in to upload an image.');
       }
 
-      const previousPath = this.currentAvatarPath;
+      const previousPath = this.avatarUrl();
       const fileExt = this.resolveFileExtension(file);
-      const filePath = `${this.userId}/${crypto.randomUUID()}.${fileExt}`;
+      const filePath = `${userId}/${crypto.randomUUID()}.${fileExt}`;
 
       const { error } = await this.profiles.uploadAvatar(filePath, file);
       if (error) {
@@ -97,10 +83,9 @@ export class AvatarComponent {
       await this.removePreviousAvatar(previousPath, filePath);
       this.upload.emit(filePath);
     } catch (error) {
-      this.errorMessage = error instanceof Error ? error.message : 'Unable to upload your image.';
+      this.errorMessage.set(error instanceof Error ? error.message : 'Unable to upload your image.');
     } finally {
-      this.uploading = false;
-      this.detectChangesSafely();
+      this.uploading.set(false);
     }
   }
 
@@ -121,10 +106,9 @@ export class AvatarComponent {
     }
   }
 
-  private detectChangesSafely(): void {
-    if (!this.destroyRef.destroyed) {
-      this.cdr.detectChanges();
-    }
+  private clearAvatar(): void {
+    this.revokeAvatarObjectUrl();
+    this.imageUrl.set(undefined);
   }
 
   private revokeAvatarObjectUrl(): void {

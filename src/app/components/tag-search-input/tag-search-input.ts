@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   DestroyRef,
   ElementRef,
@@ -23,7 +22,6 @@ let uniqueInstanceCount = 0;
   selector: 'app-tag-search-input',
   imports: [ReactiveFormsModule],
   templateUrl: './tag-search-input.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TagSearchInputComponent {
   private readonly cards = inject(CardService);

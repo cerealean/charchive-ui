@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   DestroyRef,
   computed,
@@ -20,7 +19,6 @@ import { CardCommentsComponent } from '../card-comments/card-comments';
   selector: 'app-card-detail',
   templateUrl: './card-detail.html',
   styleUrl: './card-detail.css',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DatePipe, CardCommentsComponent],
 })
 export class CardDetailComponent {

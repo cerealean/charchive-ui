@@ -18,7 +18,7 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 
 ### Creating or Updating UI Components
 
-When creating or updating UI components, use the Angular MCP server and the daisyUI MCP server, as needed.
+When creating or updating UI components, use the Angular MCP server, Angular skills, and the daisyUI MCP server, as needed.
 
 Use the Angular CLI to generate new Angular code, when available.
 
@@ -43,34 +43,14 @@ Use the Angular CLI to generate new Angular code, when available.
 - It MUST pass all AXE checks.
 - It MUST follow all WCAG AA minimums, including focus management, color contrast, and ARIA attributes.
 
-### Components
+### Verifying UI Changes
 
-- Keep components small and focused on a single responsibility
-- Use `input()` and `output()` functions instead of decorators
-- Use `computed()` for derived state
-- Set `changeDetection: ChangeDetectionStrategy.OnPush` in `@Component` decorator
-- Prefer inline templates for small components
-- Prefer Reactive forms instead of Template-driven ones
-- Do NOT use `ngClass`, use `class` bindings instead
-- Do NOT use `ngStyle`, use `style` bindings instead
-- When using external templates/styles, use paths relative to the component TS file.
+After making UI changes, use chrome-devtools-mcp to verify your changes visually, if necessary.
 
-### State Management
+Make sure to close any browser instances you've opened after you're finished testing.
 
-- Use signals for local component state
-- Use `computed()` for derived state
-- Keep state transformations pure and predictable
-- Do NOT use `mutate` on signals, use `update` or `set` instead
+#### Logging In To Test Changes
 
-### Templates
+If it's necessary to login while testing changes locally, you may use a test email of your choice and use the magic link login option. Use the supabase mcp to determine how to access the login email from the locally-running instance of Mailpit.
 
-- Keep templates simple and avoid complex logic
-- Use native control flow (`@if`, `@for`, `@switch`) instead of `*ngIf`, `*ngFor`, `*ngSwitch`
-- Use the async pipe to handle observables
-- Do not assume globals like (`new Date()`) are available.
-
-### Services
-
-- Design services around a single responsibility
-- Use the `providedIn: 'root'` option for singleton services
-- Use the `inject()` function instead of constructor injection
+Always logout after you're finished verifying changes.

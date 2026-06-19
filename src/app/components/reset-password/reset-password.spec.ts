@@ -74,7 +74,7 @@ describe('ResetPasswordComponent', () => {
 
   it('sends a reset link for a valid email', async () => {
     fixture.detectChanges();
-    component.requestEmail.setValue('user@example.com');
+    component.requestModel.set({ email: 'user@example.com' });
 
     await component.requestReset();
     fixture.detectChanges();
@@ -87,8 +87,7 @@ describe('ResetPasswordComponent', () => {
   it('does not update when the new passwords do not match', async () => {
     component.mode.set('update');
     fixture.detectChanges();
-    component.newPassword.setValue('Str0ng!Pass');
-    component.confirmPassword.setValue('Different!1');
+    component.updateModel.set({ password: 'Str0ng!Pass', confirmPassword: 'Different!1' });
     fixture.detectChanges();
 
     await component.updatePassword();
@@ -104,8 +103,8 @@ describe('ResetPasswordComponent', () => {
   it('updates the password and navigates home when valid', async () => {
     component.mode.set('update');
     fixture.detectChanges();
-    component.newPassword.setValue('Str0ng!Pass');
-    component.confirmPassword.setValue('Str0ng!Pass');
+    component.updateModel.set({ password: 'Str0ng!Pass', confirmPassword: 'Str0ng!Pass' });
+    fixture.detectChanges();
 
     await component.updatePassword();
 

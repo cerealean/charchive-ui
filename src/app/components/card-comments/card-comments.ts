@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   DestroyRef,
   computed,
@@ -27,7 +26,6 @@ type CommentNode = CardCommentViewModel & { canReply: boolean; children: Comment
   selector: 'app-card-comments',
   templateUrl: './card-comments.html',
   styleUrl: './card-comments.css',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, NgTemplateOutlet],
 })
 export class CardCommentsComponent {

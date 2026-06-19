@@ -24,6 +24,10 @@ describe('ChangePasswordComponent', () => {
     },
   } as unknown as AuthService;
 
+  function hasErrorKind(errors: readonly { kind: string }[], kind: string): boolean {
+    return errors.some((error) => error.kind === kind);
+  }
+
   beforeEach(async () => {
     updateCalls = [];
     verifyCalls = [];
@@ -52,8 +56,7 @@ describe('ChangePasswordComponent', () => {
   it('does not require a current password in create mode and creates a password', async () => {
     fixture.componentRef.setInput('hasPassword', false);
     component.open();
-    component.passwordControl.setValue('Str0ng!Pass');
-    component.confirmControl.setValue('Str0ng!Pass');
+    component.model.set({ currentPassword: '', password: 'Str0ng!Pass', confirmPassword: 'Str0ng!Pass' });
 
     await component.submit();
 
@@ -65,34 +68,34 @@ describe('ChangePasswordComponent', () => {
   it('rejects a password that does not meet the strength requirements', async () => {
     fixture.componentRef.setInput('hasPassword', false);
     component.open();
-    component.passwordControl.setValue('weak');
-    component.confirmControl.setValue('weak');
+    component.model.set({ currentPassword: '', password: 'weak', confirmPassword: 'weak' });
 
     await component.submit();
 
     expect(updateCalls.length).toBe(0);
-    expect(component.passwordControl.hasError('passwordStrength')).toBe(true);
+    expect(hasErrorKind(component.form.password().errors(), 'passwordStrength')).toBe(true);
   });
 
   it('requires the current password in update mode', async () => {
     fixture.componentRef.setInput('hasPassword', true);
     component.open();
-    component.passwordControl.setValue('Str0ng!Pass');
-    component.confirmControl.setValue('Str0ng!Pass');
+    component.model.set({ currentPassword: '', password: 'Str0ng!Pass', confirmPassword: 'Str0ng!Pass' });
 
     await component.submit();
 
     expect(updateCalls.length).toBe(0);
-    expect(component.currentPasswordControl.hasError('required')).toBe(true);
+    expect(hasErrorKind(component.form.currentPassword().errors(), 'required')).toBe(true);
   });
 
   it('verifies the current password then updates in update mode', async () => {
     fixture.componentRef.setInput('hasPassword', true);
     fixture.componentRef.setInput('email', 'user@example.com');
     component.open();
-    component.currentPasswordControl.setValue('old-pass');
-    component.passwordControl.setValue('Str0ng!Pass');
-    component.confirmControl.setValue('Str0ng!Pass');
+    component.model.set({
+      currentPassword: 'old-pass',
+      password: 'Str0ng!Pass',
+      confirmPassword: 'Str0ng!Pass',
+    });
 
     await component.submit();
 
@@ -106,9 +109,11 @@ describe('ChangePasswordComponent', () => {
     fixture.componentRef.setInput('hasPassword', true);
     fixture.componentRef.setInput('email', 'user@example.com');
     component.open();
-    component.currentPasswordControl.setValue('wrong-pass');
-    component.passwordControl.setValue('Str0ng!Pass');
-    component.confirmControl.setValue('Str0ng!Pass');
+    component.model.set({
+      currentPassword: 'wrong-pass',
+      password: 'Str0ng!Pass',
+      confirmPassword: 'Str0ng!Pass',
+    });
 
     await component.submit();
 
@@ -121,8 +126,7 @@ describe('ChangePasswordComponent', () => {
     updateError = new Error('New password should be different from the old password.');
     fixture.componentRef.setInput('hasPassword', false);
     component.open();
-    component.passwordControl.setValue('Str0ng!Pass');
-    component.confirmControl.setValue('Str0ng!Pass');
+    component.model.set({ currentPassword: '', password: 'Str0ng!Pass', confirmPassword: 'Str0ng!Pass' });
 
     await component.submit();
 

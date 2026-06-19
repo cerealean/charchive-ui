@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { CardPreviewCardComponent } from '../card-preview-card/card-preview-card';
 import { CardListViewModel } from '../../interfaces/card-list-view-model.interface';
@@ -10,7 +10,6 @@ import { CardService } from '../../services/card';
   imports: [CardPreviewCardComponent],
   templateUrl: './my-cards.html',
   styleUrl: './my-cards.css',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MyCardsComponent implements OnInit {
   private readonly router = inject(Router);
