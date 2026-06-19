@@ -1,10 +1,15 @@
+import { resource } from '@angular/core';
 import { AbstractControl, AsyncValidatorFn, ValidationErrors, Validators } from '@angular/forms';
+import { SchemaPath, SchemaPathRules, validateAsync } from '@angular/forms/signals';
 import { User } from '@supabase/supabase-js';
 import { catchError, from, map, of, switchMap, timer } from 'rxjs';
 
 import { ProfileService } from '../services/profile';
 
 export type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken';
+
+export const USERNAME_TAKEN_ERROR = 'usernameTaken';
+export const USERNAME_LOOKUP_FAILED_ERROR = 'usernameLookupFailed';
 
 export const usernameSyncValidators = [
   Validators.required,
@@ -30,6 +35,35 @@ export function createUsernameAvailabilityValidator(
       catchError(() => of({ usernameLookupFailed: true })),
     );
   };
+}
+
+// Signal Forms async validator that mirrors createUsernameAvailabilityValidator:
+// it only queries once a candidate (>= 3 chars) and an active user are present,
+// and reports availability lookups that come back taken or fail outright.
+export function validateUsernameAvailability(
+  path: SchemaPath<string, SchemaPathRules.Supported>,
+  profiles: ProfileService,
+  getUser: () => User | null,
+): void {
+  validateAsync(path, {
+    params: ({ value }) => {
+      const username = value().trim();
+      const user = getUser();
+      return username.length >= 3 && user ? { username, userId: user.id } : undefined;
+    },
+    factory: (params) =>
+      resource({
+        params,
+        loader: async ({ params: lookup }) =>
+          lookup ? profiles.isUsernameAvailable(lookup.username, lookup.userId) : true,
+      }),
+    onSuccess: (isAvailable) =>
+      isAvailable ? undefined : { kind: USERNAME_TAKEN_ERROR, message: 'That username is already taken.' },
+    onError: () => ({
+      kind: USERNAME_LOOKUP_FAILED_ERROR,
+      message: 'We could not verify that username right now.',
+    }),
+  });
 }
 
 export function getUsernameStatus(control: AbstractControl<string>): UsernameStatus {
