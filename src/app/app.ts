@@ -1,9 +1,12 @@
 import {
   Component,
   DestroyRef,
+  ElementRef,
   computed,
+  effect,
   inject,
   signal,
+  viewChild,
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
@@ -16,6 +19,9 @@ import { AuthService } from './services/auth';
   templateUrl: './app.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './app.css',
+  host: {
+    '(document:keydown.escape)': 'closeMenu()',
+  },
 })
 export class App {
   private readonly auth = inject(AuthService);
@@ -24,6 +30,10 @@ export class App {
 
   protected readonly user = signal<User | null>(null);
   protected readonly isLoggedIn = computed(() => this.user() !== null);
+  protected readonly menuOpen = signal(false);
+
+  private readonly menuToggleButton = viewChild<ElementRef<HTMLButtonElement>>('menuToggle');
+  private readonly drawerMenu = viewChild<ElementRef<HTMLElement>>('drawerMenu');
 
   constructor() {
     void this.loadCurrentUser();
@@ -37,6 +47,12 @@ export class App {
     this.destroyRef.onDestroy(() => {
       authListener.subscription.unsubscribe();
     });
+
+    effect(() => {
+      if (this.menuOpen()) {
+        this.drawerMenu()?.nativeElement.querySelector<HTMLElement>('a, button')?.focus();
+      }
+    });
   }
 
   private async loadCurrentUser(): Promise<void> {
@@ -45,11 +61,26 @@ export class App {
     this.user.set(user);
   }
 
+  protected toggleMenu(): void {
+    this.menuOpen.update((open) => !open);
+  }
+
+  protected closeMenu(): void {
+    if (!this.menuOpen()) {
+      return;
+    }
+
+    this.menuOpen.set(false);
+    this.menuToggleButton()?.nativeElement.focus();
+  }
+
   protected navigateTo(path: string): void {
+    this.closeMenu();
     void this.router.navigateByUrl(path);
   }
 
   protected async signOut(): Promise<void> {
+    this.closeMenu();
     await this.auth.signOut();
     await this.router.navigateByUrl('/');
   }

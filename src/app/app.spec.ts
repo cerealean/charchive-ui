@@ -68,4 +68,56 @@ describe('App', () => {
 
     expect(signOutMock).toHaveBeenCalledTimes(1);
   });
+
+  it('toggles the drawer menu open and closed via the hamburger button', async () => {
+    currentUser = { id: 'user-id', email: 'demo@example.com' } as User;
+
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const toggle = compiled.querySelector<HTMLButtonElement>('[aria-label="Open navigation menu"]');
+    const drawerToggle = compiled.querySelector<HTMLInputElement>('#nav-drawer');
+
+    expect(toggle?.getAttribute('aria-expanded')).toBe('false');
+    expect(drawerToggle?.checked).toBe(false);
+
+    toggle!.click();
+    fixture.detectChanges();
+
+    expect(toggle!.getAttribute('aria-expanded')).toBe('true');
+    expect(drawerToggle!.checked).toBe(true);
+
+    toggle!.click();
+    fixture.detectChanges();
+
+    expect(toggle!.getAttribute('aria-expanded')).toBe('false');
+    expect(drawerToggle!.checked).toBe(false);
+  });
+
+  it('closes the drawer menu and navigates when a drawer item is selected', async () => {
+    currentUser = { id: 'user-id', email: 'demo@example.com' } as User;
+
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const toggle = compiled.querySelector<HTMLButtonElement>('[aria-label="Open navigation menu"]');
+
+    toggle!.click();
+    fixture.detectChanges();
+
+    const drawerMenu = compiled.querySelector('#nav-drawer-menu');
+    const accountItem = Array.from(
+      drawerMenu!.querySelectorAll<HTMLButtonElement>('button'),
+    ).find((button) => button.textContent?.trim() === 'Sign out');
+
+    accountItem!.click();
+    fixture.detectChanges();
+
+    expect(signOutMock).toHaveBeenCalledTimes(1);
+    expect(toggle!.getAttribute('aria-expanded')).toBe('false');
+  });
 });

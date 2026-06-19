@@ -1,39 +1,104 @@
-<header class="navbar border-b border-base-300 bg-base-100 px-4 sm:px-6">
-  <div class="flex-1">
-    <a href="/" class="text-lg font-semibold tracking-tight text-base-content">Charchive</a>
-  </div>
-  <div class="flex-none">
-    @if (isLoggedIn()) {
-      <div class="flex items-center gap-2">
-        <button type="button" class="btn btn-ghost btn-sm sm:btn-md" (click)="navigateTo('/')">
-          Browse cards
-        </button>
-        <button
-          type="button"
-          class="btn btn-outline btn-sm sm:btn-md"
-          (click)="navigateTo('/my/cards')"
-        >
-          My cards
-        </button>
-        <button
-          type="button"
-          class="btn btn-primary btn-sm sm:btn-md"
-          (click)="navigateTo('/my/account')"
-        >
-          Account
-        </button>
-        <button type="button" class="btn btn-ghost btn-sm sm:btn-md" (click)="signOut()">
-          Sign out
-        </button>
+<div class="drawer drawer-end">
+  <input
+    id="nav-drawer"
+    type="checkbox"
+    class="drawer-toggle"
+    [checked]="menuOpen()"
+    tabindex="-1"
+    aria-hidden="true"
+  />
+  <div class="drawer-content flex min-h-screen flex-col">
+    <header class="navbar border-b border-base-300 bg-base-100 px-4 sm:px-6">
+      <div class="flex-1">
+        <a href="/" class="text-lg font-semibold tracking-tight text-base-content">Charchive</a>
       </div>
-    } @else {
-      <button type="button" class="btn btn-primary btn-sm sm:btn-md" (click)="navigateTo('/login')">
-        Login
-      </button>
-    }
-  </div>
-</header>
+      <div class="flex-none">
+        @if (isLoggedIn()) {
+          <div class="hidden items-center gap-2 sm:flex">
+            <button type="button" class="btn btn-ghost btn-sm sm:btn-md" (click)="navigateTo('/')">
+              Browse cards
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline btn-sm sm:btn-md"
+              (click)="navigateTo('/my/cards')"
+            >
+              My cards
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary btn-sm sm:btn-md"
+              (click)="navigateTo('/my/account')"
+            >
+              Account
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm sm:btn-md" (click)="signOut()">
+              Sign out
+            </button>
+          </div>
+          <button
+            #menuToggle
+            type="button"
+            class="btn btn-ghost btn-square sm:hidden"
+            aria-controls="nav-drawer-menu"
+            [attr.aria-expanded]="menuOpen()"
+            aria-label="Open navigation menu"
+            (click)="toggleMenu()"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+        } @else {
+          <button
+            type="button"
+            class="btn btn-primary btn-sm sm:btn-md"
+            (click)="navigateTo('/login')"
+          >
+            Login
+          </button>
+        }
+      </div>
+    </header>
 
-<main class="min-h-[calc(100vh-4rem)]">
-  <router-outlet />
-</main>
+    <main class="min-h-[calc(100vh-4rem)]">
+      <router-outlet />
+    </main>
+  </div>
+
+  @if (isLoggedIn()) {
+    <div class="drawer-side z-50">
+      <button
+        type="button"
+        class="drawer-overlay"
+        aria-label="Close navigation menu"
+        (click)="closeMenu()"
+      ></button>
+      <nav
+        #drawerMenu
+        id="nav-drawer-menu"
+        aria-label="Main navigation"
+        class="min-h-full w-64 bg-base-100 text-base-content"
+      >
+        <ul class="menu w-full gap-1 p-4">
+          <li><button type="button" (click)="navigateTo('/')">Browse cards</button></li>
+          <li><button type="button" (click)="navigateTo('/my/cards')">My cards</button></li>
+          <li><button type="button" (click)="navigateTo('/my/account')">Account</button></li>
+          <li><button type="button" (click)="signOut()">Sign out</button></li>
+        </ul>
+      </nav>
+    </div>
+  }
+</div>
