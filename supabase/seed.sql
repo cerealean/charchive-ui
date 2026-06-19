@@ -29,11 +29,11 @@ values (
   'authenticated',
   'seed-owner-1@charchive.local',
   crypt('seed-password-unsafe', gen_salt('bf')),
-  '2026-06-16T05:14:44.410Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
   '{"provider":"email","providers":["email"]}'::jsonb,
   '{"full_name":"Seed Owner One","display_name":"Seed Owner One","seeded":true}'::jsonb,
-  '2026-06-16T05:14:44.410Z'::timestamptz,
-  '2026-06-16T05:14:44.410Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
   false,
   '',
   '',
@@ -67,11 +67,11 @@ values (
   'authenticated',
   'seed-owner-2@charchive.local',
   crypt('seed-password-unsafe', gen_salt('bf')),
-  '2026-06-16T05:14:44.410Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
   '{"provider":"email","providers":["email"]}'::jsonb,
   '{"full_name":"Seed Owner Two","display_name":"Seed Owner Two","seeded":true}'::jsonb,
-  '2026-06-16T05:14:44.410Z'::timestamptz,
-  '2026-06-16T05:14:44.410Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
   false,
   '',
   '',
@@ -105,11 +105,11 @@ values (
   'authenticated',
   'seed-commenter-1@charchive.local',
   crypt('seed-password-unsafe', gen_salt('bf')),
-  '2026-06-16T05:14:44.410Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
   '{"provider":"email","providers":["email"]}'::jsonb,
   '{"full_name":"Ada Quill","display_name":"Ada Quill","seeded":true}'::jsonb,
-  '2026-06-16T05:14:44.410Z'::timestamptz,
-  '2026-06-16T05:14:44.410Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
   false,
   '',
   '',
@@ -143,11 +143,11 @@ values (
   'authenticated',
   'seed-commenter-2@charchive.local',
   crypt('seed-password-unsafe', gen_salt('bf')),
-  '2026-06-16T05:14:44.410Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
   '{"provider":"email","providers":["email"]}'::jsonb,
   '{"full_name":"Milo Vex","display_name":"Milo Vex","seeded":true}'::jsonb,
-  '2026-06-16T05:14:44.410Z'::timestamptz,
-  '2026-06-16T05:14:44.410Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
   false,
   '',
   '',
@@ -181,11 +181,11 @@ values (
   'authenticated',
   'seed-commenter-3@charchive.local',
   crypt('seed-password-unsafe', gen_salt('bf')),
-  '2026-06-16T05:14:44.410Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
   '{"provider":"email","providers":["email"]}'::jsonb,
   '{"full_name":"Rae Solene","display_name":"Rae Solene","seeded":true}'::jsonb,
-  '2026-06-16T05:14:44.410Z'::timestamptz,
-  '2026-06-16T05:14:44.410Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
   false,
   '',
   '',
@@ -219,11 +219,11 @@ values (
   'authenticated',
   'seed-commenter-4@charchive.local',
   crypt('seed-password-unsafe', gen_salt('bf')),
-  '2026-06-16T05:14:44.410Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
   '{"provider":"email","providers":["email"]}'::jsonb,
   '{"full_name":"Kit Marlow","display_name":"Kit Marlow","seeded":true}'::jsonb,
-  '2026-06-16T05:14:44.410Z'::timestamptz,
-  '2026-06-16T05:14:44.410Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
   false,
   '',
   '',
@@ -257,11 +257,11 @@ values (
   'authenticated',
   'seed-commenter-5@charchive.local',
   crypt('seed-password-unsafe', gen_salt('bf')),
-  '2026-06-16T05:14:44.410Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
   '{"provider":"email","providers":["email"]}'::jsonb,
   '{"full_name":"Juno Pike","display_name":"Juno Pike","seeded":true}'::jsonb,
-  '2026-06-16T05:14:44.410Z'::timestamptz,
-  '2026-06-16T05:14:44.410Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
   false,
   '',
   '',
@@ -295,11 +295,11 @@ values (
   'authenticated',
   'seed-commenter-6@charchive.local',
   crypt('seed-password-unsafe', gen_salt('bf')),
-  '2026-06-16T05:14:44.410Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
   '{"provider":"email","providers":["email"]}'::jsonb,
   '{"full_name":"Bram Oso","display_name":"Bram Oso","seeded":true}'::jsonb,
-  '2026-06-16T05:14:44.410Z'::timestamptz,
-  '2026-06-16T05:14:44.410Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
   false,
   '',
   '',
@@ -333,11 +333,11 @@ values (
   'authenticated',
   'seed-commenter-7@charchive.local',
   crypt('seed-password-unsafe', gen_salt('bf')),
-  '2026-06-16T05:14:44.410Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
   '{"provider":"email","providers":["email"]}'::jsonb,
   '{"full_name":"Nova Ledger","display_name":"Nova Ledger","seeded":true}'::jsonb,
-  '2026-06-16T05:14:44.410Z'::timestamptz,
-  '2026-06-16T05:14:44.410Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
   false,
   '',
   '',
@@ -371,11 +371,11 @@ values (
   'authenticated',
   'seed-commenter-8@charchive.local',
   crypt('seed-password-unsafe', gen_salt('bf')),
-  '2026-06-16T05:14:44.410Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
   '{"provider":"email","providers":["email"]}'::jsonb,
   '{"full_name":"Theo Wren","display_name":"Theo Wren","seeded":true}'::jsonb,
-  '2026-06-16T05:14:44.410Z'::timestamptz,
-  '2026-06-16T05:14:44.410Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
+  '2026-06-19T05:29:43.124Z'::timestamptz,
   false,
   '',
   '',
@@ -384,21 +384,92 @@ values (
 )
 on conflict (id) do nothing;
 
-insert into public.profiles (id, username, full_name)
+insert into public.profiles (id, username, full_name, avatar_url, website, about_me)
 values
-  ('11111111-1111-4111-8111-111111111111', 'seed_owner_one', 'Seed Owner One'),
-  ('22222222-2222-4222-8222-222222222222', 'seed_owner_two', 'Seed Owner Two'),
-  ('33333333-3333-4333-8333-333333333333', 'ada_quill', 'Ada Quill'),
-  ('44444444-4444-4444-8444-444444444444', 'milo_vex', 'Milo Vex'),
-  ('55555555-5555-4555-8555-555555555555', 'solene_rae', 'Rae Solene'),
-  ('66666666-6666-4666-8666-666666666666', 'kit_marlow', 'Kit Marlow'),
-  ('77777777-7777-4777-8777-777777777777', 'juno_pike', 'Juno Pike'),
-  ('88888888-8888-4888-8888-888888888888', 'bram_oso', 'Bram Oso'),
-  ('99999999-9999-4999-8999-999999999999', 'nova_ledger', 'Nova Ledger'),
-  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'theo_wren', 'Theo Wren')
+  ('11111111-1111-4111-8111-111111111111', 'seed_owner_one', 'Seed Owner One', '11111111-1111-4111-8111-111111111111/cat.png', 'https://moral-reboot.com/', '## About Seed Owner One
+
+Here for the characters, staying for the lore. Casso et vitae adimpleo vergo vallum vespillo carmen uxor modi. Veritatis aliquam thermae commemoro eligendi creo.
+
+**Favorite genres:**
+- Comedy
+- Adventure
+- Slice of life'),
+  ('22222222-2222-4222-8222-222222222222', 'seed_owner_two', 'Seed Owner Two', '22222222-2222-4222-8222-222222222222/panda.png', 'https://questionable-bench.biz', '## About Seed Owner Two
+
+Building a little archive of personalities. Tabella surculus suadeo curo combibo paulatim vita summisse. Venustas claustrum cavus ultra verbum pax velum universe aurum aperiam.
+
+**Favorite genres:**
+- Cyberpunk
+- Mystery
+- Slice of life'),
+  ('33333333-3333-4333-8333-333333333333', 'ada_quill', 'Ada Quill', '33333333-3333-4333-8333-333333333333/panda.png', null, '## About Ada Quill
+
+Long-time tinkerer, occasional storyteller. Ullam iusto beatus vetus caecus thalassinus curto. Tamquam volutabrum caterva tamquam quas.
+
+**Favorite genres:**
+- Romance
+- Horror
+- Slice of life'),
+  ('44444444-4444-4444-8444-444444444444', 'milo_vex', 'Milo Vex', '44444444-4444-4444-8444-444444444444/frog.png', null, '## About Milo Vex
+
+Building a little archive of personalities. Comburo aro ullus terror denuncio. Tyrannus sit crebro culpo aspicio timidus crudelis apto. Coniecto deludo pecto damnatio.
+
+**Favorite genres:**
+- Horror
+- Mystery
+- Slice of life
+- Comedy'),
+  ('55555555-5555-4555-8555-555555555555', 'solene_rae', 'Rae Solene', '55555555-5555-4555-8555-555555555555/cat.png', null, '## About Rae Solene
+
+Building a little archive of personalities. Summisse quam suscipit ultio optio corroboro arcus. Cilicium certus perferendis supellex atqui curriculum tardus audeo avarus vociferor.
+
+**Favorite genres:**
+- Mystery
+- Slice of life
+- Comedy'),
+  ('66666666-6666-4666-8666-666666666666', 'kit_marlow', 'Kit Marlow', null, 'https://clear-warming.name', '## About Kit Marlow
+
+Building a little archive of personalities. Commodo tamen curso aiunt stips. Eum beatae solio. Adulescens uter abbas pectus quis beatus.
+
+**Favorite genres:**
+- Adventure
+- Comedy'),
+  ('77777777-7777-4777-8777-777777777777', 'juno_pike', 'Juno Pike', null, 'https://light-seal.net', '## About Juno Pike
+
+Here for the characters, staying for the lore. Curriculum corrumpo audax totidem casus amplus absum. Coniecto suus decor blandior tersus thymum unus sint cupiditas.
+
+**Favorite genres:**
+- Romance
+- Fantasy'),
+  ('88888888-8888-4888-8888-888888888888', 'bram_oso', 'Bram Oso', '88888888-8888-4888-8888-888888888888/fox.png', 'https://glittering-marimba.biz', '## About Bram Oso
+
+Building a little archive of personalities. Thalassinus valetudo cohors tenax utpote harum. Esse ait adsuesco supra decet tam coerceo. Abscido contigo claustrum adinventitias.
+
+**Favorite genres:**
+- Adventure
+- Mystery
+- Fantasy'),
+  ('99999999-9999-4999-8999-999999999999', 'nova_ledger', 'Nova Ledger', '99999999-9999-4999-8999-999999999999/bear.png', 'https://pitiful-peninsula.com/', '## About Nova Ledger
+
+I make characters for late-night roleplay sessions. Averto sono ratione. Vobis tollo triumphus casus truculenter torrens curatio.
+
+**Favorite genres:**
+- Adventure
+- Cyberpunk
+- Horror'),
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'theo_wren', 'Theo Wren', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/fox.png', 'https://warped-depot.com', '## About Theo Wren
+
+Long-time tinkerer, occasional storyteller. Timidus terra theca nam uberrime patruus acquiro benevolentia vulnero tendo. Id adsidue tabula cui vicinus.
+
+**Favorite genres:**
+- Slice of life
+- Cyberpunk')
 on conflict (id) do update
 set username = excluded.username,
-  full_name = excluded.full_name;
+  full_name = excluded.full_name,
+  avatar_url = excluded.avatar_url,
+  website = excluded.website,
+  about_me = excluded.about_me;
 
 truncate table public.card_comments, public.card_tags, public.card_files, public.card_versions, public.cards, public.tags restart identity cascade;
 

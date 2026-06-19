@@ -78,6 +78,49 @@ function loadCardFileRows() {
   return extractJson(output, '[', ']') ?? [];
 }
 
+const MIME_BY_EXTENSION = {
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  webp: 'image/webp',
+  gif: 'image/gif',
+};
+
+function mimeForFile(fileName) {
+  const extension = fileName.split('.').pop()?.toLowerCase() ?? '';
+  return MIME_BY_EXTENSION[extension] ?? 'application/octet-stream';
+}
+
+// Profiles store only the storage path in avatar_url (e.g. "<userId>/<file>.png").
+// The basename matches a source image in seeds/images, mirroring how card files
+// recover their source by original_filename.
+function loadProfileAvatarRows() {
+  const output = runSupabase(
+    [
+      'db',
+      'query',
+      '--local',
+      '--output-format',
+      'json',
+      'select avatar_url from public.profiles where avatar_url is not null order by id;',
+    ],
+    'Load profile avatar rows',
+  );
+
+  const rows = extractJson(output, '[', ']') ?? [];
+
+  return rows.map((row) => {
+    const originalFilename = row.avatar_url.split('/').pop();
+
+    return {
+      bucket_id: 'profile-avatars',
+      storage_path: row.avatar_url,
+      original_filename: originalFilename,
+      mime_type: mimeForFile(originalFilename),
+    };
+  });
+}
+
 async function uploadFiles(rows, config) {
   let uploaded = 0;
   let skipped = 0;
@@ -131,12 +174,14 @@ async function main() {
     );
   }
 
-  const rows = loadCardFileRows();
+  const rows = [...loadCardFileRows(), ...loadProfileAvatarRows()];
   const { uploaded, skipped } = await uploadFiles(rows, config);
 
   const skippedNote =
     skipped > 0 ? ` (skipped ${skipped} row(s) with no matching source image)` : '';
-  console.log(`Seeded storage bucket card-files with ${uploaded} object(s)${skippedNote}.`);
+  console.log(
+    `Seeded storage buckets card-files and profile-avatars with ${uploaded} object(s)${skippedNote}.`,
+  );
 }
 
 main().catch((error) => {

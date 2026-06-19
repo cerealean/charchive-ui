@@ -16,6 +16,29 @@ const storageCardFilesGeneratedDir = path.join(storageCardFilesDir, 'cards');
 
 const SEED_COUNT = 100;
 const FAKER_SEED = 20260606;
+// A distinct seed for profile data so generating profiles never shifts the
+// card RNG stream (keeping seeded cards/comments byte-for-byte stable).
+const PROFILE_FAKER_SEED = FAKER_SEED + 1;
+
+const PROFILE_GENRES = [
+  'Fantasy',
+  'Sci-fi',
+  'Slice of life',
+  'Horror',
+  'Mystery',
+  'Comedy',
+  'Adventure',
+  'Romance',
+  'Cyberpunk',
+];
+
+const PROFILE_INTROS = [
+  'Card crafter and worldbuilder.',
+  'I make characters for late-night roleplay sessions.',
+  'Long-time tinkerer, occasional storyteller.',
+  'Here for the characters, staying for the lore.',
+  'Building a little archive of personalities.',
+];
 
 const OWNER_USERS = [
   {
@@ -730,20 +753,75 @@ on conflict (id) do nothing;`,
   return blocks;
 }
 
-// The on_auth_user_created trigger creates a bare profile (no username); set a
-// username here so seeded comment authors and card owners show a real handle.
-function renderProfilesSql() {
-  const values = ALL_SEED_USERS.map(
-    (user) =>
-      `(${sqlString(user.id)}, ${sqlString(user.username)}, ${sqlString(user.displayName)})`,
-  ).join(',\n  ');
+function buildAboutMe(displayName) {
+  const intro = faker.helpers.arrayElement(PROFILE_INTROS);
+  const blurb = faker.lorem.sentences({ min: 2, max: 3 });
+  const genres = faker.helpers.arrayElements(
+    PROFILE_GENRES,
+    faker.number.int({ min: 2, max: 4 }),
+  );
 
-  return `insert into public.profiles (id, username, full_name)
+  return [
+    `## About ${displayName}`,
+    '',
+    `${intro} ${blurb}`,
+    '',
+    '**Favorite genres:**',
+    ...genres.map((genre) => `- ${genre}`),
+  ].join('\n');
+}
+
+// Deterministically builds profile data (about me, website, avatar) for each
+// seeded user. Avatars reference real seed images so seed-storage-local.mjs can
+// upload them to the profile-avatars bucket. Card owners always get an avatar so
+// their public profiles look complete; commenters get one most of the time.
+function buildSeedProfiles(imageAssets) {
+  faker.seed(PROFILE_FAKER_SEED);
+
+  const imageFileNames = imageAssets.map((asset) => asset.fileName);
+
+  return ALL_SEED_USERS.map((user, index) => {
+    const isOwner = index < OWNER_USERS.length;
+    const hasAvatar =
+      imageFileNames.length > 0 && (isOwner || faker.datatype.boolean({ probability: 0.7 }));
+    const avatarFileName = hasAvatar ? faker.helpers.arrayElement(imageFileNames) : null;
+    const hasWebsite = faker.datatype.boolean({ probability: 0.6 });
+
+    return {
+      id: user.id,
+      username: user.username,
+      full_name: user.displayName,
+      about_me: buildAboutMe(user.displayName),
+      website: hasWebsite ? faker.internet.url() : null,
+      avatar_url: avatarFileName ? `${user.id}/${avatarFileName}` : null,
+    };
+  });
+}
+
+// The on_auth_user_created trigger creates a bare profile (no username); set the
+// username and the rest of the public profile here so seeded comment authors and
+// card owners show a real handle, avatar, and About Me.
+function renderProfilesSql(profiles) {
+  const values = profiles
+    .map(
+      (profile) =>
+        `(${sqlString(profile.id)}, ${sqlString(profile.username)}, ${sqlNullableString(
+          profile.full_name,
+        )}, ${sqlNullableString(profile.avatar_url)}, ${sqlNullableString(
+          profile.website,
+        )}, ${sqlNullableString(profile.about_me)})`,
+    )
+    .join(',\n  ');
+
+  return `insert into public.profiles (id, username, full_name, avatar_url, website, about_me)
 values
   ${values}
 on conflict (id) do update
 set username = excluded.username,
-  full_name = excluded.full_name;`;
+  full_name = excluded.full_name,
+  avatar_url = excluded.avatar_url,
+  website = excluded.website,
+  about_me = excluded.about_me;`;
 }
 
 function renderInsert(tableName, columns, rows, mapper) {
@@ -756,7 +834,7 @@ function renderInsert(tableName, columns, rows, mapper) {
   return `insert into ${tableName} (${columns.join(', ')})\nvalues\n${values};`;
 }
 
-function buildSeedSql(rows) {
+function buildSeedSql(rows, profiles) {
   const tagsBySlug = new Map(rows.tags.map((tag) => [tag.slug, tag]));
   const avatarAssignments = rows.cards
     .filter((card) => Boolean(card.desired_avatar_file_id))
@@ -986,7 +1064,7 @@ begin;
 
 ${renderUserInsertSql()}
 
-${renderProfilesSql()}
+${renderProfilesSql(profiles)}
 
 truncate table public.card_comments, public.card_tags, public.card_files, public.card_versions, public.cards, public.tags restart identity cascade;
 
@@ -1040,7 +1118,8 @@ async function stageStorageObjects(files) {
 async function main() {
   const { templates, imageAssets } = await loadExampleAssets();
   const rows = buildSeedRows(templates, imageAssets);
-  const sql = buildSeedSql(rows);
+  const profiles = buildSeedProfiles(imageAssets);
+  const sql = buildSeedSql(rows, profiles);
 
   await fs.writeFile(outputSqlPath, sql, 'utf8');
   const stagedObjects = await stageStorageObjects(rows.files);
