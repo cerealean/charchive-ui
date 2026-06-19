@@ -13,15 +13,15 @@
     <div class="card border border-base-300 bg-base-100 shadow-xl">
       <div class="card-body gap-6 p-6 sm:p-8">
         <div aria-live="polite" class="space-y-3">
-          @if (statusMessage) {
+          @if (statusMessage()) {
             <div role="status" class="alert alert-success alert-soft">
-              <span>{{ statusMessage }}</span>
+              <span>{{ statusMessage() }}</span>
             </div>
           }
 
-          @if (errorMessage) {
+          @if (errorMessage()) {
             <div role="alert" class="alert alert-error alert-soft">
-              <span>{{ errorMessage }}</span>
+              <span>{{ errorMessage() }}</span>
             </div>
           }
         </div>
@@ -35,7 +35,7 @@
           <div class="rounded-2xl border border-base-300 bg-base-200/60 p-4 sm:p-5">
             <app-avatar
               [avatarUrl]="avatarUrl"
-              [userId]="user?.id ?? null"
+              [userId]="currentUser()?.id ?? null"
               (upload)="updateAvatar($event)"
             ></app-avatar>
           </div>
@@ -49,7 +49,7 @@
                 id="email"
                 class="input input-bordered w-full"
                 type="email"
-                [value]="user?.email ?? ''"
+                [value]="currentUser()?.email ?? ''"
                 readonly
                 aria-readonly="true"
               />
@@ -138,14 +138,14 @@
 
           <div class="flex flex-col gap-3 pt-2 sm:flex-row">
             <button type="submit" class="btn btn-primary" [disabled]="saveDisabled">
-              @if (loading) {
+              @if (loading()) {
                 <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
                 Saving...
               } @else {
                 Save profile
               }
             </button>
-            <button type="button" class="btn btn-outline" (click)="signOut()" [disabled]="loading">
+            <button type="button" class="btn btn-outline" (click)="signOut()" [disabled]="loading()">
               Sign out
             </button>
           </div>
@@ -179,7 +179,7 @@
   <app-change-password
     #changePassword
     [hasPassword]="hasPassword()"
-    [email]="user?.email ?? ''"
+    [email]="currentUser()?.email ?? ''"
     (saved)="onPasswordSaved($event)"
   />
 </section>

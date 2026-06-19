@@ -56,7 +56,7 @@ describe('AccountComponent', () => {
 
     fixture = TestBed.createComponent(AccountComponent);
     component = fixture.componentInstance;
-    component.user = mockUser;
+    fixture.componentRef.setInput('user', mockUser);
     fixture.detectChanges();
     await fixture.whenStable();
   });

@@ -1,13 +1,4 @@
-import {
-  ChangeDetectorRef,
-  Component,
-  DestroyRef,
-  Input,
-  OnInit,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, OnInit, computed, inject, input, linkedSignal, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { User } from '@supabase/supabase-js';
@@ -34,18 +25,20 @@ export class AccountComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly profiles = inject(ProfileService);
   private readonly formBuilder = inject(FormBuilder);
-  private readonly cdr = inject(ChangeDetectorRef);
-  private readonly destroyRef = inject(DestroyRef);
 
-  loading = false;
-  statusMessage = '';
-  errorMessage = '';
-  profile?: Profile;
+  readonly user = input<User | null>(null);
+  protected readonly currentUser = linkedSignal(() => this.user());
+
+  readonly loading = signal(false);
+  readonly statusMessage = signal('');
+  readonly errorMessage = signal('');
   readonly hasPassword = signal(false);
+  private readonly profile = signal<Profile | undefined>(undefined);
+
   readonly updateProfileForm = this.formBuilder.nonNullable.group({
     username: this.formBuilder.nonNullable.control('', {
       validators: usernameSyncValidators,
-      asyncValidators: [createUsernameAvailabilityValidator(this.profiles, () => this.user)],
+      asyncValidators: [createUsernameAvailabilityValidator(this.profiles, () => this.currentUser())],
     }),
     website: ['', [Validators.pattern(/^$|^https?:\/\/\S+$/i)]],
     avatar_url: [''],
@@ -75,9 +68,6 @@ export class AccountComponent implements OnInit {
     return this.usernameControl.dirty;
   });
 
-  @Input()
-  user: User | null = null;
-
   get avatarUrl() {
     return this.updateProfileForm.controls.avatar_url.getRawValue();
   }
@@ -93,12 +83,12 @@ export class AccountComponent implements OnInit {
   protected get saveDisabled() {
     this.updateProfileFormChanges();
 
-    return this.loading || this.updateProfileForm.pending || this.updateProfileForm.invalid;
+    return this.loading() || this.updateProfileForm.pending || this.updateProfileForm.invalid;
   }
 
   async updateAvatar(event: string): Promise<void> {
-    this.statusMessage = '';
-    this.errorMessage = '';
+    this.statusMessage.set('');
+    this.errorMessage.set('');
 
     this.updateProfileForm.patchValue({
       avatar_url: event,
@@ -108,12 +98,12 @@ export class AccountComponent implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    if (!this.user) {
-      this.user = await this.auth.getUser();
+    if (!this.currentUser()) {
+      this.currentUser.set(await this.auth.getUser());
     }
 
-    if (!this.user) {
-      this.errorMessage = 'No active session found. Please sign in again.';
+    if (!this.currentUser()) {
+      this.errorMessage.set('No active session found. Please sign in again.');
       return;
     }
 
@@ -121,51 +111,49 @@ export class AccountComponent implements OnInit {
 
     await this.getProfile();
 
-    if (!this.profile) {
-      this.detectChangesSafely();
+    const profile = this.profile();
+    if (!profile) {
       return;
     }
 
-    const { username, website, avatar_url } = this.profile;
+    const { username, website, avatar_url } = profile;
     this.updateProfileForm.patchValue({
       username: username ?? '',
       website: website ?? '',
       avatar_url: avatar_url ?? '',
     });
     this.usernameControl.updateValueAndValidity();
-
-    this.detectChangesSafely();
   }
 
   async getProfile() {
-    this.errorMessage = '';
+    this.errorMessage.set('');
 
     try {
-      this.loading = true;
-      if (!this.user) {
+      this.loading.set(true);
+      const user = this.currentUser();
+      if (!user) {
         throw new Error('No active user is available for profile loading.');
       }
 
-      const { data: profile, error, status } = await this.profiles.profile(this.user);
+      const { data: profile, error, status } = await this.profiles.profile(user);
 
       if (error && status !== 406) {
         throw error;
       }
 
       if (profile) {
-        this.profile = profile;
+        this.profile.set(profile);
       }
     } catch (error) {
-      this.errorMessage = error instanceof Error ? error.message : 'Unable to load your profile.';
+      this.errorMessage.set(error instanceof Error ? error.message : 'Unable to load your profile.');
     } finally {
-      this.loading = false;
-      this.detectChangesSafely();
+      this.loading.set(false);
     }
   }
 
   async updateProfile(): Promise<void> {
-    this.statusMessage = '';
-    this.errorMessage = '';
+    this.statusMessage.set('');
+    this.errorMessage.set('');
 
     if (this.updateProfileForm.invalid) {
       this.updateProfileForm.markAllAsTouched();
@@ -173,9 +161,10 @@ export class AccountComponent implements OnInit {
     }
 
     try {
-      this.loading = true;
+      this.loading.set(true);
 
-      if (!this.user) {
+      const user = this.currentUser();
+      if (!user) {
         throw new Error('No active user is available for profile updates.');
       }
 
@@ -184,7 +173,7 @@ export class AccountComponent implements OnInit {
       const avatar_url = this.updateProfileForm.controls.avatar_url.getRawValue()?.trim();
 
       const { error } = await this.profiles.updateProfile({
-        id: this.user.id,
+        id: user.id,
         username,
         website,
         avatar_url,
@@ -194,42 +183,33 @@ export class AccountComponent implements OnInit {
         throw error;
       }
 
-      this.statusMessage = 'Profile saved successfully.';
+      this.statusMessage.set('Profile saved successfully.');
     } catch (error) {
-      this.errorMessage = error instanceof Error ? error.message : 'Unable to save your profile.';
+      this.errorMessage.set(error instanceof Error ? error.message : 'Unable to save your profile.');
     } finally {
-      this.loading = false;
-      this.detectChangesSafely();
+      this.loading.set(false);
     }
   }
 
   async signOut() {
-    this.statusMessage = '';
-    this.errorMessage = '';
+    this.statusMessage.set('');
+    this.errorMessage.set('');
 
     try {
-      this.loading = true;
+      this.loading.set(true);
       await this.auth.signOut();
     } catch (error) {
-      this.errorMessage = error instanceof Error ? error.message : 'Unable to sign out.';
+      this.errorMessage.set(error instanceof Error ? error.message : 'Unable to sign out.');
     } finally {
-      this.loading = false;
-      this.detectChangesSafely();
+      this.loading.set(false);
     }
   }
 
   onPasswordSaved(created: boolean): void {
-    this.statusMessage = created
-      ? 'Password created successfully.'
-      : 'Password updated successfully.';
-    this.errorMessage = '';
+    this.statusMessage.set(
+      created ? 'Password created successfully.' : 'Password updated successfully.',
+    );
+    this.errorMessage.set('');
     this.hasPassword.set(true);
-    this.detectChangesSafely();
-  }
-
-  private detectChangesSafely(): void {
-    if (!this.destroyRef.destroyed) {
-      this.cdr.detectChanges();
-    }
   }
 }
