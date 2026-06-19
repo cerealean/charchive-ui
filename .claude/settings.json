@@ -12,6 +12,7 @@
       "mcp__daisyui",
       "mcp__angular-cli",
       "mcp__supabase",
+      "mcp__chrome-devtools",
       "npx vitest run:*",
       "Bash(npm run build:*)",
       "Bash(npm run test:*)",
