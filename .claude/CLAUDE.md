@@ -50,3 +50,5 @@ After making UI changes, use chrome-devtools-mcp to verify your changes visually
 #### Logging In To Test Changes
 
 If it's necessary to login while testing changes locally, you may use a test email of your choice and use the magic link login option. Use the supabase mcp to determine how to access the login email from the locally-running instance of Mailpit.
+
+Always logout after you're finished verifying changes.
