@@ -6,7 +6,7 @@ import {
   signal,
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { CardDetailRecord } from '../../interfaces/card-detail-record.interface';
@@ -20,7 +20,7 @@ import { MarkdownPipe } from '../../shared/markdown.pipe';
   selector: 'app-card-detail',
   templateUrl: './card-detail.html',
   styleUrl: './card-detail.css',
-  imports: [DatePipe, CardCommentsComponent, MarkdownPipe],
+  imports: [DatePipe, CardCommentsComponent, MarkdownPipe, RouterLink],
 })
 export class CardDetailComponent {
   private readonly route = inject(ActivatedRoute);
@@ -32,6 +32,7 @@ export class CardDetailComponent {
 
   protected readonly card = signal<CardDetailRecord | null>(null);
   protected readonly uploadedBy = signal<string | null>(null);
+  protected readonly uploaderUsername = signal<string | null>(null);
 
   protected readonly loading = signal(false);
   protected readonly hasResolved = signal(false);
@@ -90,6 +91,7 @@ export class CardDetailComponent {
     this.hasResolved.set(false);
     this.imageResolved.set(false);
     this.errorMessage.set('');
+    this.uploaderUsername.set(null);
     this.likeCount.set(0);
     this.liked.set(false);
     this.likePending.set(false);
@@ -141,6 +143,7 @@ export class CardDetailComponent {
       this.uploadedBy.set(
         uploaderProfile?.username ?? card.current_version?.creator_name ?? 'Unknown',
       );
+      this.uploaderUsername.set(uploaderProfile?.username ?? null);
       this.hasResolved.set(true);
 
       const imageUrl = await imageUrlPromise;

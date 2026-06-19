@@ -43,7 +43,7 @@ describe('CardService', () => {
     queryBuilder.upsert.mockReturnValue({ data: null, error: null });
     queryBuilder.delete.mockReturnValue(queryBuilder);
     queryBuilder.maybeSingle.mockResolvedValue({ data: null, error: null });
-    queryBuilder.in.mockResolvedValue({ data: [], error: null });
+    queryBuilder.in.mockReturnValue(queryBuilder);
     queryBuilder.ilike.mockReturnValue(queryBuilder);
     queryBuilder.limit.mockReturnValue(queryBuilder);
 
@@ -79,6 +79,16 @@ describe('CardService', () => {
 
   it('should be created', () => {
     expect(service).toBeTruthy();
+  });
+
+  it('publicCardsByOwner filters by owner and non-private visibility, newest first', () => {
+    service.publicCardsByOwner('owner-1');
+
+    expect(fromSpy).toHaveBeenCalledWith('cards');
+    expect(eqSpy).toHaveBeenCalledWith('owner_id', 'owner-1');
+    expect(inSpy).toHaveBeenCalledWith('visibility', ['public', 'unlisted']);
+    expect(orderSpy).toHaveBeenCalledWith('created_at', { ascending: false });
+    expect(returnsSpy).toHaveBeenCalled();
   });
 
   it('searchTags queries tags ordered by popularity then name, capped by limit', () => {

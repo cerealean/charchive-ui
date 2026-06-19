@@ -2,6 +2,7 @@ import { Service, inject } from '@angular/core';
 import { User } from '@supabase/supabase-js';
 
 import { Profile } from '../interfaces/profile.interface';
+import { PublicProfile } from '../interfaces/public-profile.interface';
 import { SupabaseService } from './supabase';
 
 @Service()
@@ -11,9 +12,17 @@ export class ProfileService {
   profile(user: User) {
     return this.supabase.client
       .from('profiles')
-      .select('username, website, avatar_url')
+      .select('username, website, avatar_url, about_me')
       .eq('id', user.id)
       .single();
+  }
+
+  profileByUsername(username: string) {
+    return this.supabase.client
+      .from('profiles')
+      .select('id, username, avatar_url, about_me')
+      .eq('username', username)
+      .maybeSingle<PublicProfile>();
   }
 
   profileUsername(user: User) {

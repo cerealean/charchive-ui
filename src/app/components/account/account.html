@@ -134,6 +134,47 @@
                 </div>
               }
             </label>
+
+            <label class="form-control w-full md:col-span-2" for="about-me">
+              <div class="label px-0 pb-2">
+                <span class="label-text font-medium text-base-content">About me</span>
+                <span class="label-text-alt text-base-content/60">Markdown supported</span>
+              </div>
+              <textarea
+                id="about-me"
+                formControlName="about_me"
+                class="textarea textarea-bordered min-h-32 w-full"
+                placeholder="Tell people a little about yourself. Markdown is supported."
+                [attr.maxlength]="aboutMeMaxLength"
+                [attr.aria-invalid]="aboutMeControl.invalid && aboutMeControl.touched"
+              ></textarea>
+              <div class="label px-0 pt-2">
+                @if (aboutMeControl.invalid && aboutMeControl.touched) {
+                  <span class="label-text-alt text-error">
+                    About me must be {{ aboutMeMaxLength }} characters or fewer.
+                  </span>
+                } @else {
+                  <span class="label-text-alt text-base-content/60"></span>
+                }
+                <span class="label-text-alt text-base-content/60"
+                  >{{ aboutMeValue().length }} / {{ aboutMeMaxLength }}</span
+                >
+              </div>
+
+              @if (aboutMeValue().trim()) {
+                <div class="mt-2 rounded-2xl border border-base-300 bg-base-200/60 p-4">
+                  <p
+                    class="mb-2 text-xs font-semibold uppercase tracking-wide text-base-content/60"
+                  >
+                    Preview
+                  </p>
+                  <div
+                    class="prose prose-sm max-w-none leading-7 text-base-content/80"
+                    [innerHTML]="aboutMeValue() | markdown"
+                  ></div>
+                </div>
+              }
+            </label>
           </div>
 
           <div class="flex flex-col gap-3 pt-2 sm:flex-row">

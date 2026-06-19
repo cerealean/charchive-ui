@@ -1,0 +1,93 @@
+<section class="min-h-screen bg-base-200 px-4 py-8 sm:px-6 lg:px-8">
+  <div class="mx-auto flex w-full max-w-384 flex-col gap-6">
+    @if (loading()) {
+      <div role="status" class="alert alert-info alert-soft">
+        <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
+        <span>Loading profile...</span>
+      </div>
+    }
+
+    @if (errorMessage()) {
+      <div role="alert" class="alert alert-error alert-soft">
+        <span>{{ errorMessage() }}</span>
+      </div>
+    }
+
+    @if (!loading() && notFound()) {
+      <div class="rounded-3xl border border-dashed border-base-300 bg-base-100 p-10 text-center">
+        <h1 class="text-xl font-semibold text-base-content">Profile not found</h1>
+        <p class="mt-2 text-sm text-base-content/70">
+          We couldn't find a user with that username.
+        </p>
+      </div>
+    }
+
+    @if (!loading() && !notFound() && profile(); as profile) {
+      <header
+        class="flex flex-col items-center gap-5 rounded-3xl border border-base-300 bg-base-100 p-6 text-center shadow-sm sm:flex-row sm:items-center sm:gap-6 sm:p-8 sm:text-left"
+      >
+        <div class="avatar" [class.avatar-placeholder]="!avatarImageUrl()">
+          <div
+            class="w-24 rounded-full ring ring-base-300 ring-offset-2 ring-offset-base-100 sm:w-28"
+            [class.bg-neutral]="!avatarImageUrl()"
+            [class.text-neutral-content]="!avatarImageUrl()"
+          >
+            @if (avatarImageUrl(); as avatar) {
+              <img [src]="avatar" alt="Avatar for {{ profile.username }}" />
+            } @else {
+              <span class="text-3xl font-bold">
+                {{ (profile.username ?? '?').charAt(0).toUpperCase() }}
+              </span>
+            }
+          </div>
+        </div>
+
+        <div class="min-w-0">
+          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-base-content/60">
+            Profile
+          </p>
+          <h1 class="mt-1 break-words text-3xl font-black tracking-tight text-base-content sm:text-4xl">
+            {{ profile.username }}
+          </h1>
+        </div>
+      </header>
+
+      @if (profile.about_me?.trim()) {
+        <section class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-sm sm:p-8">
+          <h2 class="text-xs font-semibold uppercase tracking-wide text-base-content/60">
+            About me
+          </h2>
+          <div
+            class="prose prose-sm mt-3 max-w-none leading-7 text-base-content/80"
+            [innerHTML]="profile.about_me | markdown"
+          ></div>
+        </section>
+      }
+
+      <section class="flex flex-col gap-4">
+        <h2 class="text-xl font-bold tracking-tight text-base-content">
+          Cards by {{ profile.username }}
+        </h2>
+
+        @if (cards().length > 0) {
+          <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            @for (card of cards(); track card.id) {
+              <app-card-preview-card
+                [card]="card"
+                (viewCard)="viewCard($event)"
+              ></app-card-preview-card>
+            }
+          </div>
+        } @else {
+          <div
+            class="rounded-3xl border border-dashed border-base-300 bg-base-100 p-10 text-center"
+          >
+            <p class="text-sm text-base-content/70">
+              {{ profile.username }} hasn't shared any cards yet.
+            </p>
+          </div>
+        }
+      </section>
+    }
+  </div>
+</section>

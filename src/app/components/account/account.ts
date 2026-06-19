@@ -12,14 +12,17 @@ import {
   getUsernameStatus,
   usernameSyncValidators,
 } from '../../shared/username-validation';
+import { MarkdownPipe } from '../../shared/markdown.pipe';
 import { AvatarComponent } from '../avatar/avatar';
 import { ChangePasswordComponent } from '../change-password/change-password';
+
+const ABOUT_ME_MAX_LENGTH = 2000;
 
 @Component({
   selector: 'app-account',
   templateUrl: './account.html',
   styleUrls: ['./account.css'],
-  imports: [ReactiveFormsModule, AvatarComponent, ChangePasswordComponent],
+  imports: [ReactiveFormsModule, AvatarComponent, ChangePasswordComponent, MarkdownPipe],
 })
 export class AccountComponent implements OnInit {
   private readonly auth = inject(AuthService);
@@ -42,7 +45,10 @@ export class AccountComponent implements OnInit {
     }),
     website: ['', [Validators.pattern(/^$|^https?:\/\/\S+$/i)]],
     avatar_url: [''],
+    about_me: ['', [Validators.maxLength(ABOUT_ME_MAX_LENGTH)]],
   });
+
+  protected readonly aboutMeMaxLength = ABOUT_ME_MAX_LENGTH;
 
   private readonly usernameControlChanges = toSignal(
     merge(this.usernameControl.valueChanges, this.usernameControl.statusChanges).pipe(
@@ -75,6 +81,14 @@ export class AccountComponent implements OnInit {
   get websiteControl() {
     return this.updateProfileForm.controls.website;
   }
+
+  get aboutMeControl() {
+    return this.updateProfileForm.controls.about_me;
+  }
+
+  protected readonly aboutMeValue = toSignal(this.aboutMeControl.valueChanges, {
+    initialValue: '',
+  });
 
   get usernameControl() {
     return this.updateProfileForm.controls.username;
@@ -116,11 +130,12 @@ export class AccountComponent implements OnInit {
       return;
     }
 
-    const { username, website, avatar_url } = profile;
+    const { username, website, avatar_url, about_me } = profile;
     this.updateProfileForm.patchValue({
       username: username ?? '',
       website: website ?? '',
       avatar_url: avatar_url ?? '',
+      about_me: about_me ?? '',
     });
     this.usernameControl.updateValueAndValidity();
   }
@@ -171,12 +186,14 @@ export class AccountComponent implements OnInit {
       const username = this.updateProfileForm.controls.username.getRawValue().trim();
       const website = this.updateProfileForm.controls.website.getRawValue()?.trim();
       const avatar_url = this.updateProfileForm.controls.avatar_url.getRawValue()?.trim();
+      const about_me = this.updateProfileForm.controls.about_me.getRawValue()?.trim() || null;
 
       const { error } = await this.profiles.updateProfile({
         id: user.id,
         username,
         website,
         avatar_url,
+        about_me,
       });
 
       if (error) {

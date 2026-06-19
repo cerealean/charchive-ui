@@ -27,6 +27,27 @@ interface OwnedCardListRecord {
   } | null;
 }
 
+export interface ProfileCardRecord {
+  id: string;
+  title: string;
+  tagline: string | null;
+  created_at: string;
+  like_count: number;
+  comment_count: number;
+  current_version: {
+    character_name: string | null;
+  } | null;
+  avatar_file: {
+    storage_path: string;
+  } | null;
+  tags: Array<{
+    tag: {
+      name: string;
+      slug: string;
+    } | null;
+  }>;
+}
+
 interface UploadedCardRecord {
   id: string;
 }
@@ -85,6 +106,37 @@ export class CardService {
       .eq('owner_id', ownerId)
       .order('updated_at', { ascending: false })
       .returns<OwnedCardListRecord[]>();
+  }
+
+  publicCardsByOwner(ownerId: string) {
+    return this.supabase.client
+      .from('cards')
+      .select(
+        `
+          id,
+          title,
+          tagline,
+          created_at,
+          like_count,
+          comment_count,
+          current_version:card_versions!cards_current_version_id_fkey(
+            character_name
+          ),
+          avatar_file:card_files!cards_avatar_file_id_fkey(
+            storage_path
+          ),
+          tags:card_tags(
+            tag:tags(
+              name,
+              slug
+            )
+          )
+        `,
+      )
+      .eq('owner_id', ownerId)
+      .in('visibility', ['public', 'unlisted'])
+      .order('created_at', { ascending: false })
+      .returns<ProfileCardRecord[]>();
   }
 
   cardById(cardId: string) {

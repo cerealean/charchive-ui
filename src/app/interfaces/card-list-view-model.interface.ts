@@ -3,6 +3,7 @@ export interface CardListViewModel {
   name: string;
   tagline: string;
   uploader: string;
+  uploaderUsername?: string | null;
   createdAtIso: string;
   createdAgo: string;
   likeCount: number;

@@ -35,7 +35,14 @@
 
     <div class="mt-auto space-y-2 pt-1">
       <p class="text-xs text-base-content/70">
-        Uploaded by <span class="font-semibold">{{ card().uploader }}</span>
+        Uploaded by
+        @if (card().uploaderUsername; as username) {
+          <a class="link link-hover font-semibold" [routerLink]="['/u', username]">{{
+            card().uploader
+          }}</a>
+        } @else {
+          <span class="font-semibold">{{ card().uploader }}</span>
+        }
       </p>
       <p class="flex items-center gap-2 text-xs text-base-content/60">
         <time

@@ -54,6 +54,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./components/card-detail/card-detail').then((m) => m.CardDetailComponent),
       },
+      {
+        path: 'u/:username',
+        loadComponent: () =>
+          import('./components/user-profile/user-profile').then((m) => m.UserProfileComponent),
+      },
     ],
   },
 ];

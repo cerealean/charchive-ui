@@ -236,10 +236,7 @@ export class CardsComponent implements OnInit, AfterViewInit {
       }
 
       const usernameById = new Map(
-        (profiles ?? []).map((profile) => [
-          profile.id,
-          profile.username?.trim() || 'Unknown uploader',
-        ]),
+        (profiles ?? []).map((profile) => [profile.id, profile.username?.trim() || null]),
       );
 
       const imageUrlByCardId = await this.resolveCardImageUrls(cardRows);
@@ -247,12 +244,14 @@ export class CardsComponent implements OnInit, AfterViewInit {
 
       const viewModels: CardListViewModel[] = cardRows.map((card) => {
         const name = card.character_name?.trim() || card.title;
+        const uploaderUsername = usernameById.get(card.owner_id) ?? null;
 
         return {
           id: card.id,
           name,
           tagline: card.tagline?.trim() || 'No tagline provided.',
-          uploader: usernameById.get(card.owner_id) || 'Unknown uploader',
+          uploader: uploaderUsername || 'Unknown uploader',
+          uploaderUsername,
           createdAtIso: card.created_at,
           createdAgo: this.formatRelativeTime(card.created_at),
           likeCount: card.like_count ?? 0,

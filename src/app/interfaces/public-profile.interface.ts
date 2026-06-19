@@ -1,7 +1,6 @@
-export interface Profile {
-  id?: string;
+export interface PublicProfile {
+  id: string;
   username: string | null;
-  website: string | null;
   avatar_url: string | null;
   about_me: string | null;
 }

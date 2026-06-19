@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { Component, input, output } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import { CardListViewModel } from '../../interfaces/card-list-view-model.interface';
 
@@ -7,7 +8,7 @@ import { CardListViewModel } from '../../interfaces/card-list-view-model.interfa
   selector: 'app-card-preview-card',
   templateUrl: './card-preview-card.html',
   styleUrl: './card-preview-card.css',
-  imports: [DatePipe],
+  imports: [DatePipe, RouterLink],
   host: {
     class: 'block h-full',
   },

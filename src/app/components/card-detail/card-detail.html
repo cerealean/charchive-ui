@@ -111,7 +111,15 @@
                     <dt class="text-xs font-semibold uppercase tracking-wide text-base-content/60">
                       Uploaded by
                     </dt>
-                    <dd class="mt-1 text-base font-medium text-base-content">{{ uploadedBy() }}</dd>
+                    <dd class="mt-1 text-base font-medium text-base-content">
+                      @if (uploaderUsername(); as username) {
+                        <a class="link link-hover" [routerLink]="['/u', username]">{{
+                          uploadedBy()
+                        }}</a>
+                      } @else {
+                        {{ uploadedBy() }}
+                      }
+                    </dd>
                   </div>
 
                   <div>
