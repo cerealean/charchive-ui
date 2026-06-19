@@ -19,6 +19,10 @@ describe('LoginComponent', () => {
     'signIn' | 'signInWithPassword' | 'signUp' | 'resendConfirmation'
   >;
 
+  function hasErrorKind(errors: readonly { kind: string }[], kind: string): boolean {
+    return errors.some((error) => error.kind === kind);
+  }
+
   beforeEach(async () => {
     signInCalls = 0;
     passwordCalls = [];
@@ -92,7 +96,7 @@ describe('LoginComponent', () => {
 
   it('sends a magic link when the email is valid', async () => {
     fixture.detectChanges();
-    component.emailControl.setValue('user@example.com');
+    component.signInModel.set({ email: 'user@example.com', password: '' });
 
     await component.sendMagicLink();
     fixture.detectChanges();
@@ -115,7 +119,7 @@ describe('LoginComponent', () => {
   it('requires a password before signing in with a password', async () => {
     fixture.detectChanges();
     component.revealPassword();
-    component.emailControl.setValue('user@example.com');
+    component.signInModel.set({ email: 'user@example.com', password: '' });
     fixture.detectChanges();
 
     await component.signInWithPassword();
@@ -131,8 +135,7 @@ describe('LoginComponent', () => {
   it('signs in and navigates home when password credentials are valid', async () => {
     fixture.detectChanges();
     component.revealPassword();
-    component.emailControl.setValue('user@example.com');
-    component.passwordControl.setValue('s3cret-pass');
+    component.signInModel.set({ email: 'user@example.com', password: 's3cret-pass' });
 
     await component.signInWithPassword();
 
@@ -144,8 +147,7 @@ describe('LoginComponent', () => {
     passwordError = new Error('Invalid login credentials');
     fixture.detectChanges();
     component.revealPassword();
-    component.emailControl.setValue('user@example.com');
-    component.passwordControl.setValue('wrong-pass');
+    component.signInModel.set({ email: 'user@example.com', password: 'wrong-pass' });
 
     await component.signInWithPassword();
     fixture.detectChanges();
@@ -169,9 +171,11 @@ describe('LoginComponent', () => {
   it('does not register when the passwords do not match', async () => {
     fixture.detectChanges();
     component.setMode('register');
-    component.registerEmail.setValue('new@example.com');
-    component.registerPassword.setValue('Str0ng!Pass');
-    component.registerConfirm.setValue('Different!1');
+    component.registerModel.set({
+      email: 'new@example.com',
+      password: 'Str0ng!Pass',
+      confirmPassword: 'Different!1',
+    });
     fixture.detectChanges();
 
     await component.register();
@@ -187,22 +191,26 @@ describe('LoginComponent', () => {
   it('does not register with a password that fails the strength rules', async () => {
     fixture.detectChanges();
     component.setMode('register');
-    component.registerEmail.setValue('new@example.com');
-    component.registerPassword.setValue('weakpass');
-    component.registerConfirm.setValue('weakpass');
+    component.registerModel.set({
+      email: 'new@example.com',
+      password: 'weakpass',
+      confirmPassword: 'weakpass',
+    });
 
     await component.register();
 
-    expect(component.registerPassword.hasError('passwordStrength')).toBe(true);
+    expect(hasErrorKind(component.registerForm.password().errors(), 'passwordStrength')).toBe(true);
     expect(signUpCalls.length).toBe(0);
   });
 
   it('registers and shows a confirmation message when the form is valid', async () => {
     fixture.detectChanges();
     component.setMode('register');
-    component.registerEmail.setValue('new@example.com');
-    component.registerPassword.setValue('Str0ng!Pass');
-    component.registerConfirm.setValue('Str0ng!Pass');
+    component.registerModel.set({
+      email: 'new@example.com',
+      password: 'Str0ng!Pass',
+      confirmPassword: 'Str0ng!Pass',
+    });
 
     await component.register();
     fixture.detectChanges();
@@ -215,9 +223,11 @@ describe('LoginComponent', () => {
   it('hides the form and offers a resend after a successful sign-up', async () => {
     fixture.detectChanges();
     component.setMode('register');
-    component.registerEmail.setValue('new@example.com');
-    component.registerPassword.setValue('Str0ng!Pass');
-    component.registerConfirm.setValue('Str0ng!Pass');
+    component.registerModel.set({
+      email: 'new@example.com',
+      password: 'Str0ng!Pass',
+      confirmPassword: 'Str0ng!Pass',
+    });
 
     await component.register();
     fixture.detectChanges();
