@@ -1,4 +1,3 @@
-import { AbstractControl, ValidationErrors } from '@angular/forms';
 import { PathKind, SchemaPath, SchemaPathRules, validate } from '@angular/forms/signals';
 
 export const MIN_PASSWORD_LENGTH = 8;
@@ -28,12 +27,6 @@ export function isStrongPassword(value: string): boolean {
   return Object.values(evaluatePassword(value)).every(Boolean);
 }
 
-export function passwordStrengthValidator(control: AbstractControl): ValidationErrors | null {
-  const value = control.value ?? '';
-  const checks = evaluatePassword(value);
-  return isStrongPassword(value) ? null : { passwordStrength: checks };
-}
-
 export function passwordRequirements(value: string): { met: boolean; label: string }[] {
   const checks = evaluatePassword(value ?? '');
   return [
@@ -43,12 +36,6 @@ export function passwordRequirements(value: string): { met: boolean; label: stri
     { met: checks.number, label: 'One number' },
     { met: checks.symbol, label: 'One symbol' },
   ];
-}
-
-export function passwordsMatch(group: AbstractControl): ValidationErrors | null {
-  const password = group.get('password')?.value;
-  const confirmPassword = group.get('confirmPassword')?.value;
-  return password === confirmPassword ? null : { passwordMismatch: true };
 }
 
 // Signal Forms validator: marks the field invalid until the password satisfies

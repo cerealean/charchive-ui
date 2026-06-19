@@ -1,10 +1,4 @@
-import { FormControl } from '@angular/forms';
-
-import {
-  evaluatePassword,
-  isStrongPassword,
-  passwordStrengthValidator,
-} from './password-validation';
+import { evaluatePassword, isStrongPassword } from './password-validation';
 
 describe('password-validation', () => {
   it('reports each unmet requirement', () => {
@@ -33,15 +27,5 @@ describe('password-validation', () => {
   it('rejects a password missing a symbol or number', () => {
     expect(isStrongPassword('Strongpass')).toBe(false);
     expect(isStrongPassword('Strongpass1')).toBe(false);
-  });
-
-  it('validator returns the failing checks for a weak password', () => {
-    const error = passwordStrengthValidator(new FormControl('weak'));
-
-    expect(error?.['passwordStrength']).toMatchObject({ minLength: false, uppercase: false });
-  });
-
-  it('validator returns null for a strong password', () => {
-    expect(passwordStrengthValidator(new FormControl('Str0ng!Pass'))).toBeNull();
   });
 });
