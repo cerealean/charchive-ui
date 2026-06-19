@@ -42,3 +42,7 @@ Use the Angular CLI to generate new Angular code, when available.
 
 - It MUST pass all AXE checks.
 - It MUST follow all WCAG AA minimums, including focus management, color contrast, and ARIA attributes.
+
+### Verifying UI Changes
+
+After making UI changes, use chrome-devtools-mcp to verify your changes visually, if necessary.
