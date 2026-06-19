@@ -18,7 +18,7 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 
 ### Creating or Updating UI Components
 
-When creating or updating UI components, use the Angular MCP server and the daisyUI MCP server, as needed.
+When creating or updating UI components, use the Angular MCP server, Angular skills, and the daisyUI MCP server, as needed.
 
 Use the Angular CLI to generate new Angular code, when available.
 
