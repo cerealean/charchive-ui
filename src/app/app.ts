@@ -48,4 +48,9 @@ export class App {
   protected navigateTo(path: string): void {
     void this.router.navigateByUrl(path);
   }
+
+  protected async signOut(): Promise<void> {
+    await this.auth.signOut();
+    await this.router.navigateByUrl('/');
+  }
 }

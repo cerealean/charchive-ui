@@ -208,20 +208,6 @@ export class AccountComponent implements OnInit {
     }
   }
 
-  async signOut() {
-    this.statusMessage.set('');
-    this.errorMessage.set('');
-
-    try {
-      this.loading.set(true);
-      await this.auth.signOut();
-    } catch (error) {
-      this.errorMessage.set(error instanceof Error ? error.message : 'Unable to sign out.');
-    } finally {
-      this.loading.set(false);
-    }
-  }
-
   onPasswordSaved(created: boolean): void {
     this.statusMessage.set(
       created ? 'Password created successfully.' : 'Password updated successfully.',

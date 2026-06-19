@@ -22,6 +22,9 @@
         >
           Account
         </button>
+        <button type="button" class="btn btn-ghost btn-sm sm:btn-md" (click)="signOut()">
+          Sign out
+        </button>
       </div>
     } @else {
       <button type="button" class="btn btn-primary btn-sm sm:btn-md" (click)="navigateTo('/login')">
