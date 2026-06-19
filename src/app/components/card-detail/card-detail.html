@@ -155,9 +155,14 @@
               <h2 class="text-xs font-semibold uppercase tracking-wide text-base-content/60">
                 Card creator's notes
               </h2>
-              <p class="mt-2 whitespace-pre-wrap leading-7 text-base-content/80">
-                {{ card.current_version?.creator_notes || 'No creator notes provided.' }}
-              </p>
+              @if (card.current_version?.creator_notes; as notes) {
+                <div
+                  class="prose prose-sm mt-2 max-w-none leading-7 text-base-content/80"
+                  [innerHTML]="notes | markdown"
+                ></div>
+              } @else {
+                <p class="mt-2 leading-7 text-base-content/80">No creator notes provided.</p>
+              }
             </section>
 
             <app-card-comments [cardId]="card.id" />
