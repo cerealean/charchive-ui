@@ -1,6 +1,10 @@
 import { AbstractControl, ValidationErrors } from '@angular/forms';
+import { PathKind, SchemaPath, SchemaPathRules, validate } from '@angular/forms/signals';
 
 export const MIN_PASSWORD_LENGTH = 8;
+
+export const PASSWORD_STRENGTH_ERROR = 'passwordStrength';
+export const PASSWORD_MISMATCH_ERROR = 'passwordMismatch';
 
 export interface PasswordChecks {
   minLength: boolean;
@@ -45,4 +49,30 @@ export function passwordsMatch(group: AbstractControl): ValidationErrors | null 
   const password = group.get('password')?.value;
   const confirmPassword = group.get('confirmPassword')?.value;
   return password === confirmPassword ? null : { passwordMismatch: true };
+}
+
+// Signal Forms validator: marks the field invalid until the password satisfies
+// every strength requirement. The requirement checklist (passwordRequirements)
+// is what surfaces the specifics to the user.
+export function validatePasswordStrength<TPathKind extends PathKind = PathKind.Root>(
+  path: SchemaPath<string, SchemaPathRules.Supported, TPathKind>,
+): void {
+  validate(path, ({ value }) =>
+    isStrongPassword(value())
+      ? undefined
+      : { kind: PASSWORD_STRENGTH_ERROR, message: 'Password does not meet the requirements below.' },
+  );
+}
+
+// Signal Forms cross-field validator: flags the confirmation field when it does
+// not match the password field it is paired with.
+export function validatePasswordsMatch<TPathKind extends PathKind = PathKind.Root>(
+  confirmPath: SchemaPath<string, SchemaPathRules.Supported, TPathKind>,
+  passwordPath: SchemaPath<string, SchemaPathRules>,
+): void {
+  validate(confirmPath, ({ value, valueOf }) =>
+    value() === valueOf(passwordPath)
+      ? undefined
+      : { kind: PASSWORD_MISMATCH_ERROR, message: 'Passwords do not match.' },
+  );
 }
