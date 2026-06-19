@@ -1,11 +1,9 @@
-import { Injectable, inject } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 
 import { SupabaseService } from './supabase';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class AuthService {
   private readonly supabase = inject(SupabaseService);
 
