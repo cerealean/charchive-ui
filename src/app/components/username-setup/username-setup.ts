@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   DestroyRef,
   OnInit,
@@ -23,7 +22,6 @@ import {
   imports: [ReactiveFormsModule],
   templateUrl: './username-setup.html',
   styleUrl: './username-setup.css',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UsernameSetupComponent implements OnInit {
   private readonly auth = inject(AuthService);

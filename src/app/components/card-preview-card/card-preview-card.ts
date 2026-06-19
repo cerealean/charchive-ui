@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 
 import { CardListViewModel } from '../../interfaces/card-list-view-model.interface';
 
@@ -8,7 +8,6 @@ import { CardListViewModel } from '../../interfaces/card-list-view-model.interfa
   templateUrl: './card-preview-card.html',
   styleUrl: './card-preview-card.css',
   imports: [DatePipe],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block h-full',
   },

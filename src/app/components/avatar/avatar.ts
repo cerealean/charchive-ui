@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
   DestroyRef,
@@ -14,7 +13,6 @@ import { ProfileService } from '../../services/profile';
   selector: 'app-avatar',
   templateUrl: './avatar.html',
   styleUrls: ['./avatar.css'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AvatarComponent {
   _avatarUrl: SafeResourceUrl | undefined;

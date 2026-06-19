@@ -1,6 +1,5 @@
 import {
   AfterViewInit,
-  ChangeDetectionStrategy,
   Component,
   DestroyRef,
   OnInit,
@@ -34,7 +33,6 @@ const MAX_VISIBLE_PAGE_BUTTONS = 7;
   imports: [CardPreviewCardComponent, TagSearchInputComponent, ReactiveFormsModule],
   templateUrl: './cards.html',
   styleUrl: './cards.css',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CardsComponent implements OnInit, AfterViewInit {
   private readonly cardsService = inject(CardService);

@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
   DestroyRef,
@@ -29,7 +28,6 @@ import { ChangePasswordComponent } from '../change-password/change-password';
   selector: 'app-account',
   templateUrl: './account.html',
   styleUrls: ['./account.css'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, AvatarComponent, ChangePasswordComponent],
 })
 export class AccountComponent implements OnInit {

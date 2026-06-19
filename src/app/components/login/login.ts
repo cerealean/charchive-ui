@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, Validators, FormBuilder } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth';
@@ -13,7 +13,6 @@ const AUTHENTICATED_HOME_PATH = '/my/cards';
   templateUrl: './login.html',
   styleUrls: ['./login.css'],
   imports: [ReactiveFormsModule, RouterLink],
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoginComponent {
   private readonly auth = inject(AuthService);

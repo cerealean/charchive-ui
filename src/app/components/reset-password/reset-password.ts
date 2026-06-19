@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   DestroyRef,
   PLATFORM_ID,
@@ -25,7 +24,6 @@ const RESET_PASSWORD_PATH = '/reset-password';
   selector: 'app-reset-password',
   templateUrl: './reset-password.html',
   imports: [ReactiveFormsModule, RouterLink],
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ResetPasswordComponent {
   private readonly auth = inject(AuthService);

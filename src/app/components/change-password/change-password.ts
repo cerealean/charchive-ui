@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   ElementRef,
   inject,
@@ -21,7 +20,6 @@ import {
   selector: 'app-change-password',
   templateUrl: './change-password.html',
   imports: [ReactiveFormsModule],
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChangePasswordComponent {
   private readonly auth = inject(AuthService);
